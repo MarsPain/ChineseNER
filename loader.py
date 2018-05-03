@@ -22,16 +22,19 @@ def load_sentences(path, lower, zeros):
         if not line:
             if len(sentence) > 0:
                 if 'DOCSTART' not in sentence[0][0]:
+                    #每句话结束的时候将sentence添加到sentences中
                     sentences.append(sentence)
                 sentence = []
         else:
             if line[0] == " ":
                 line = "$" + line[1:]
+                #将每个词与相应的标注存储为一个数组word
                 word = line.split()
                 # word[0] = " "
             else:
                 word= line.split()
             assert len(word) >= 2, print([word[0]])
+            # 每个word数组添加到sentence中
             sentence.append(word)
     if len(sentence) > 0:
         if 'DOCSTART' not in sentence[0][0]:
@@ -68,9 +71,11 @@ def char_mapping(sentences, lower):
     Create a dictionary and a mapping of words, sorted by frequency.
     """
     chars = [[x[0].lower() if lower else x[0] for x in s] for s in sentences]
+    #用create_dico创建字典
     dico = create_dico(chars)
     dico["<PAD>"] = 10000001
     dico['<UNK>'] = 10000000
+    #根据字典得到两种映射
     char_to_id, id_to_char = create_mapping(dico)
     print("Found %i unique words (%i in total)" % (
         len(dico), sum(len(x) for x in chars)

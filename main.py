@@ -111,9 +111,12 @@ def train():
     update_tag_scheme(test_sentences, FLAGS.tag_schema)
 
     # create maps if not exist
+    #os.path.isfile查找是否存在该文件
     if not os.path.isfile(FLAGS.map_file):
         # create dictionary for word
+        #使用预训练的词向量
         if FLAGS.pre_emb:
+            #取返回列表的第一个值——字典
             dico_chars_train = char_mapping(train_sentences, FLAGS.lower)[0]
             dico_chars, char_to_id, id_to_char = augment_with_pretrained(
                 dico_chars_train.copy(),
@@ -122,7 +125,9 @@ def train():
                     [[w[0] for w in s] for s in test_sentences])
                 )
             )
+        #若不使用预训练的词向量
         else:
+            #直接返回字典与两个映射
             _c, char_to_id, id_to_char = char_mapping(train_sentences, FLAGS.lower)
 
         # Create a dictionary and a mapping for tags
