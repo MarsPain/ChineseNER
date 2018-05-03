@@ -16,6 +16,7 @@ def load_sentences(path, lower, zeros):
     num = 0
     for line in codecs.open(path, 'r', 'utf8'):
         num+=1
+        #根据zero参数的值决定是否将所有的数字设为0
         line = zero_digits(line.rstrip()) if zeros else line.rstrip()
         # print(list(line))
         if not line:
