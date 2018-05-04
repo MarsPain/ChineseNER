@@ -120,7 +120,7 @@ def prepare_dataset(sentences, char_to_id, tag_to_id, lower=False, train=True):
 
     return data
 
-
+#将字典中未出现但是在预训练文件中存在的词加入字典中并赋值为0（暂时并没有将向量赋值给每个词）
 def augment_with_pretrained(dictionary, ext_emb_path, chars):
     """
     Augment the dictionary with words that have a pretrained embedding.

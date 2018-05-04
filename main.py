@@ -15,8 +15,10 @@ from utils import print_config, save_config, load_config, test_ner
 from data_utils import load_word2vec, create_input, input_from_line, BatchManager
 
 flags = tf.app.flags
-flags.DEFINE_boolean("clean",       True,      "clean train folder")
-flags.DEFINE_boolean("train",       True,      "Wither train the model")
+#若要训练则将clean和train设置为True
+#若要通过自己的输入进行验证则将clean和train均设置为False
+flags.DEFINE_boolean("clean",       False,      "clean train folder")
+flags.DEFINE_boolean("train",       False,      "Wither train the model")
 # configurations for the model
 flags.DEFINE_integer("seg_dim",     20,         "Embedding size for segmentation, 0 if not used")
 flags.DEFINE_integer("char_dim",    100,        "Embedding size for characters")
@@ -118,6 +120,7 @@ def train():
         if FLAGS.pre_emb:
             #取返回列表的第一个值——字典
             dico_chars_train = char_mapping(train_sentences, FLAGS.lower)[0]
+            #用预训练字典填充字典：将在预训练词向量文件中存在但是不存在于字典中的词加入字典
             dico_chars, char_to_id, id_to_char = augment_with_pretrained(
                 dico_chars_train.copy(),
                 FLAGS.emb_file,

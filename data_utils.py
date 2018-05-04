@@ -155,7 +155,7 @@ def create_input(data):
     inputs.append(data['tags'])
     return inputs
 
-
+#从预训练向量
 def load_word2vec(emb_path, id_to_word, word_dim, old_weights):
     """
     Load word embedding from pre-trained file
