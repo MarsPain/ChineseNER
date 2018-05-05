@@ -120,13 +120,13 @@ class Model(object):
             for direction in ["forward", "backward"]:
                 with tf.variable_scope(direction):
                     lstm_cell[direction] = rnn.CoupledInputForgetGateLSTMCell(
-                        lstm_dim,
+                        lstm_dim,   #每个LSTM cell内部的神经元数量（即隐层参数维度）
                         use_peepholes=True,
                         initializer=self.initializer,
                         state_is_tuple=True)
             outputs, final_states = tf.nn.bidirectional_dynamic_rnn(
-                lstm_cell["forward"],
-                lstm_cell["backward"],
+                lstm_cell["forward"],   #前向传播cell的一个实例
+                lstm_cell["backward"],  #后向传播cell的一个实例
                 lstm_inputs,
                 dtype=tf.float32,
                 sequence_length=lengths)
