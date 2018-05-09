@@ -229,7 +229,7 @@ class Model(object):
         :param matrix: transaction matrix for inference
         :return:
         """
-        # inference final labels usa viterbi Algorithm
+        # inference final labels us a viterbi Algorithm
         paths = []
         small = -1000.0
         start = np.asarray([[small]*self.num_tags +[0]])

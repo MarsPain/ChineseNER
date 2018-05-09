@@ -296,6 +296,7 @@ class BatchManager(object):
         return batch_data
 
     @staticmethod
+    #填充数据以对齐长度？
     def pad_data(data):
         strings = []
         chars = []
