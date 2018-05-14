@@ -3,7 +3,7 @@ import re
 import codecs
 
 from data_utils import create_dico, create_mapping, zero_digits
-from data_utils import iob2, iob_iobes, get_seg_features
+from data_utils import iob2, iob_iobes, get_seg_features, iobes_iob
 
 
 def load_sentences(path, lower, zeros):
@@ -49,22 +49,25 @@ def update_tag_scheme(sentences, tag_scheme):
     """
     for i, s in enumerate(sentences):
         tags = [w[-1] for w in s]
+        #对IOB标注模式的数据进行处理
         # Check that tags are given in the IOB format
+        # 确定原数据的标注模式是IOB格式
         if not iob2(tags):
             s_str = '\n'.join(' '.join(w) for w in s)
             raise Exception('Sentences should be given in IOB format! ' +
                             'Please check sentence %i:\n%s' % (i, s_str))
+        #若依然按照IOB格式进行处理
         if tag_scheme == 'iob':
             # If format was IOB1, we convert to IOB2
             for word, new_tag in zip(s, tags):
                 word[-1] = new_tag
+        #若要转换成IOBES格式
         elif tag_scheme == 'iobes':
             new_tags = iob_iobes(tags)
             for word, new_tag in zip(s, new_tags):
                 word[-1] = new_tag
         else:
             raise Exception('Unknown tagging scheme!')
-
 
 def char_mapping(sentences, lower):
     """

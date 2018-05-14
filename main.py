@@ -115,9 +115,10 @@ def train():
     dev_sentences = load_sentences(FLAGS.dev_file, FLAGS.lower, FLAGS.zeros)
     test_sentences = load_sentences(FLAGS.test_file, FLAGS.lower, FLAGS.zeros)
 
+    #原数据的标注模式与需要的标注模式不同时用update_tag_scheme对标注模式进行转换
     # Use selected tagging scheme (IOB / IOBES)
-    update_tag_scheme(train_sentences, FLAGS.tag_schema)
-    update_tag_scheme(test_sentences, FLAGS.tag_schema)
+    # update_tag_scheme(train_sentences, FLAGS.tag_schema)
+    # update_tag_scheme(test_sentences, FLAGS.tag_schema)
 
     # create maps if not exist
     #os.path.isfile查找是否存在该文件
