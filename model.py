@@ -94,14 +94,14 @@ class Model(object):
         """
 
         embedding = []
-        with tf.variable_scope("char_embedding" if not name else name), tf.device('/cpu:0'):
+        with tf.variable_scope("char_embedding" if not name else name):
             self.char_lookup = tf.get_variable(
                     name="char_embedding",
                     shape=[self.num_chars, self.char_dim],
                     initializer=self.initializer)
             embedding.append(tf.nn.embedding_lookup(self.char_lookup, char_inputs))
             if config["seg_dim"]:
-                with tf.variable_scope("seg_embedding"), tf.device('/cpu:0'):
+                with tf.variable_scope("seg_embedding"):
                     self.seg_lookup = tf.get_variable(
                         name="seg_embedding",
                         shape=[self.num_segs, self.seg_dim],

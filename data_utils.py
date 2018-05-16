@@ -132,8 +132,9 @@ def get_seg_features(string):
     s donates single word
     """
     seg_feature = []
-
+    # print(string)
     for word in jieba.cut(string):
+        # print(word)
         if len(word) == 1:
             seg_feature.append(0)
         else:

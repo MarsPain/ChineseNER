@@ -22,6 +22,8 @@ flags.DEFINE_boolean("train",       True,      "Wither train the model")
 # flags.DEFINE_boolean("clean",       False,      "clean train folder")
 # flags.DEFINE_boolean("train",       False,      "Wither train the model")
 # configurations for the model
+#seg_dim为分割特征的维度，分割特征即为词向量，对应的char_dim为自向量的维度，分别对应于
+# 英语文本中的词向量和字符向量
 flags.DEFINE_integer("seg_dim",     20,         "Embedding size for segmentation, 0 if not used")
 flags.DEFINE_integer("char_dim",    100,        "Embedding size for characters")
 flags.DEFINE_integer("lstm_dim",    100,        "Num of hidden units in LSTM")
@@ -30,7 +32,7 @@ flags.DEFINE_string("tag_schema",   "iobes",    "tagging schema iobes or iob")
 # configurations for training
 flags.DEFINE_float("clip",          5,          "Gradient clip")
 flags.DEFINE_float("dropout",       0.5,        "Dropout rate")
-flags.DEFINE_float("batch_size",    20,         "batch size")
+flags.DEFINE_float("batch_size",    400,         "batch size")
 flags.DEFINE_float("lr",            0.001,      "Initial learning rate")
 flags.DEFINE_string("optimizer",    "adam",     "Optimizer for training")
 flags.DEFINE_boolean("pre_emb",     True,       "Wither use pre-trained embedding")
@@ -153,8 +155,9 @@ def train():
             char_to_id, id_to_char, tag_to_id, id_to_tag = pickle.load(f)
 
     # prepare data, get a collection of list containing index
-    #将sentence中的word和tag进行拆分和处理，得到单词序列、单词到ID的映射的序列（作为x_train）、
-    #Segment_feature（还没理解作用和意义，原理是用jieba对整个句子进行分词，然后处理得到的某种标签）（应该是作为辅助判断的标签、计算损失函数的一部分）、
+    #将sentence中的word和tag进行拆分和处理，得到字序列、字到ID的映射的序列（作为x_train）、
+    #Segment_feature（还没理解作用和意义，原理是用jieba对整个句子进行分词，然后处理得到的某种标签）
+    #   （应该是作为辅助判断的标签、计算损失函数的一部分）（根据源代码注释，是分割特征）、
     #标签到ID的映射（对于IOBES的编码格式而言，有13种，比如E-ORG和E-PER）（作为y-train）
     train_data = prepare_dataset(
         train_sentences, char_to_id, tag_to_id, FLAGS.lower
