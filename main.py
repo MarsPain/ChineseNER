@@ -49,13 +49,13 @@ flags.DEFINE_string("script",       "conlleval",    "evaluation script")
 flags.DEFINE_string("result_path",  "result",       "Path for results")
 flags.DEFINE_string("emb_file",     "wiki_100.utf8", "Path for pre_trained embedding")
 #用原数据集进行训练和测试
-# flags.DEFINE_string("train_file",   os.path.join("data", "example.train"),  "Path for train data")
-# flags.DEFINE_string("dev_file",     os.path.join("data", "example.dev"),    "Path for dev data")
-# flags.DEFINE_string("test_file",    os.path.join("data", "example.test"),   "Path for test data")
+flags.DEFINE_string("train_file",   os.path.join("data", "example.train"),  "Path for train data")
+flags.DEFINE_string("dev_file",     os.path.join("data", "example.dev"),    "Path for dev data")
+flags.DEFINE_string("test_file",    os.path.join("data", "example.test"),   "Path for test data")
 #用中医证候数据集进行训练和测试
-flags.DEFINE_string("train_file",   os.path.join("data", "example_medicine.train"),  "Path for train data")
-flags.DEFINE_string("dev_file",     os.path.join("data", "example_medicine.dev"),    "Path for dev data")
-flags.DEFINE_string("test_file",    os.path.join("data", "example_medicine.test"),   "Path for test data")
+# flags.DEFINE_string("train_file",   os.path.join("data", "example_medicine.train"),  "Path for train data")
+# flags.DEFINE_string("dev_file",     os.path.join("data", "example_medicine.dev"),    "Path for dev data")
+# flags.DEFINE_string("test_file",    os.path.join("data", "example_medicine.test"),   "Path for test data")
 
 
 FLAGS = tf.app.flags.FLAGS
@@ -117,8 +117,8 @@ def train():
 
     #原数据的标注模式与需要的标注模式不同时用update_tag_scheme对标注模式进行转换
     # Use selected tagging scheme (IOB / IOBES)
-    # update_tag_scheme(train_sentences, FLAGS.tag_schema)
-    # update_tag_scheme(test_sentences, FLAGS.tag_schema)
+    update_tag_scheme(train_sentences, FLAGS.tag_schema)
+    update_tag_scheme(test_sentences, FLAGS.tag_schema)
 
     # create maps if not exist
     #os.path.isfile查找是否存在该文件
@@ -162,7 +162,7 @@ def train():
     print("%i / %i / %i sentences in train / dev / test." % (
         len(train_data), 0, len(test_data)))
 
-    train_manager = BatchManager(train_data, FLAGS.batch_size)
+    train_manager = BatchManager(train_data, int(FLAGS.batch_size))
     dev_manager = BatchManager(dev_data, 100)
     test_manager = BatchManager(test_data, 100)
     # make path for store log and model if not exist
