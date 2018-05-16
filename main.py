@@ -37,7 +37,7 @@ flags.DEFINE_boolean("pre_emb",     True,       "Wither use pre-trained embeddin
 flags.DEFINE_boolean("zeros",       False,      "Wither replace digits with zero")
 flags.DEFINE_boolean("lower",       True,       "Wither lower case")
 
-flags.DEFINE_integer("max_epoch",   100,        "maximum training epochs")
+flags.DEFINE_integer("max_epoch",   10,        "maximum training epochs")
 flags.DEFINE_integer("steps_check", 100,        "steps per checkpoint")
 flags.DEFINE_string("ckpt_path",    "ckpt",      "Path to save model")
 flags.DEFINE_string("summary_path", "summary",      "Path to store summaries")
@@ -111,9 +111,11 @@ def evaluate(sess, model, name, data, id_to_tag, logger):
 
 def train():
     # load data sets
+    #加载数据集的sentence，并处理成列表，每个sentence中的词及相应的标签也处理成列表
     train_sentences = load_sentences(FLAGS.train_file, FLAGS.lower, FLAGS.zeros)
     dev_sentences = load_sentences(FLAGS.dev_file, FLAGS.lower, FLAGS.zeros)
     test_sentences = load_sentences(FLAGS.test_file, FLAGS.lower, FLAGS.zeros)
+    # print("dev_sentences:", dev_sentences)
 
     #原数据的标注模式与需要的标注模式不同时用update_tag_scheme对标注模式进行转换
     # Use selected tagging scheme (IOB / IOBES)
@@ -143,6 +145,7 @@ def train():
 
         # Create a dictionary and a mapping for tags
         _t, tag_to_id, id_to_tag = tag_mapping(train_sentences)
+        # print("tag_to_id", tag_to_id, len(tag_to_id))
         with open(FLAGS.map_file, "wb") as f:
             pickle.dump([char_to_id, id_to_char, tag_to_id, id_to_tag], f)
     else:
@@ -150,6 +153,9 @@ def train():
             char_to_id, id_to_char, tag_to_id, id_to_tag = pickle.load(f)
 
     # prepare data, get a collection of list containing index
+    #将sentence中的word和tag进行拆分和处理，得到单词序列、单词到ID的映射的序列（作为x_train）、
+    #Segment_feature（还没理解作用和意义，原理是用jieba对整个句子进行分词，然后处理得到的某种标签）（应该是作为辅助判断的标签、计算损失函数的一部分）、
+    #标签到ID的映射（对于IOBES的编码格式而言，有13种，比如E-ORG和E-PER）（作为y-train）
     train_data = prepare_dataset(
         train_sentences, char_to_id, tag_to_id, FLAGS.lower
     )
@@ -159,6 +165,7 @@ def train():
     test_data = prepare_dataset(
         test_sentences, char_to_id, tag_to_id, FLAGS.lower
     )
+    # print("dev_data:", dev_data, len(dev_data))
     print("%i / %i / %i sentences in train / dev / test." % (
         len(train_data), 0, len(test_data)))
 
