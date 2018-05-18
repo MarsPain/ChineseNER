@@ -5,7 +5,7 @@ import codecs
 from data_utils import create_dico, create_mapping, zero_digits
 from data_utils import iob2, iob_iobes, get_seg_features, iobes_iob
 
-#加载数据集中的sentence，每个sentence一个列表，然后将每个sentence列表中又包含所有词及相应标签的列表
+#加载数据集中的sentence，每个sentence一个列表，然后每个sentence列表中又包含所有词及相应标签的列表
 def load_sentences(path, lower, zeros):
     """
     Load sentences. A line must contain at least a word and its tag.

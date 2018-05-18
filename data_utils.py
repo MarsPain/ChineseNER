@@ -31,9 +31,11 @@ def create_mapping(dico):
     Items are ordered by decreasing frequency.
     """
     #根据字典dico创建两种映射字典
-    sorted_items = sorted(dico.items(), key=lambda x: (-x[1], x[0]))
-    id_to_item = {i: v[0] for i, v in enumerate(sorted_items)}
-    item_to_id = {v: k for k, v in id_to_item.items()}
+    sorted_items = sorted(dico.items(), key=lambda x: (-x[1], x[0]))    #按照词频排序
+    # for i, v in enumerate(sorted_items):
+    #     print(i, v)
+    id_to_item = {i: v[0] for i, v in enumerate(sorted_items)}  #id（根据词频排序从0开始）到word
+    item_to_id = {v: k for k, v in id_to_item.items()}  #反转映射
     return item_to_id, id_to_item
 
 
