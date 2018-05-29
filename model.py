@@ -95,6 +95,7 @@ class Model(object):
 
         embedding = []
         with tf.variable_scope("char_embedding" if not name else name):
+            print("num_chars", self.num_chars)
             self.char_lookup = tf.get_variable(
                     name="char_embedding",
                     shape=[self.num_chars, self.char_dim],
@@ -102,12 +103,14 @@ class Model(object):
             embedding.append(tf.nn.embedding_lookup(self.char_lookup, char_inputs))
             if config["seg_dim"]:
                 with tf.variable_scope("seg_embedding"):
+                    print("num_segs", self.seg_dim)
                     self.seg_lookup = tf.get_variable(
                         name="seg_embedding",
                         shape=[self.num_segs, self.seg_dim],
                         initializer=self.initializer)
                     embedding.append(tf.nn.embedding_lookup(self.seg_lookup, seg_inputs))
             embed = tf.concat(embedding, axis=-1)
+            print(embed.shape)
         return embed
 
     def biLSTM_layer(self, lstm_inputs, lstm_dim, lengths, name=None):
