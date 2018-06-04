@@ -175,10 +175,15 @@ class Model(object):
             start_logits = tf.concat(
                 [small * tf.ones(shape=[self.batch_size, 1, self.num_tags]), tf.zeros(shape=[self.batch_size, 1, 1])], axis=-1)
             pad_logits = tf.cast(small * tf.ones([self.batch_size, self.num_steps, 1]), tf.float32)
+            print("project_logits", project_logits)
+            print("pad_logits", pad_logits)
             logits = tf.concat([project_logits, pad_logits], axis=-1)
+            print("logits", logits)
             logits = tf.concat([start_logits, logits], axis=1)
+            print("logits", logits)
             targets = tf.concat(
                 [tf.cast(self.num_tags*tf.ones([self.batch_size, 1]), tf.int32), self.targets], axis=-1)
+            print("targets:", targets)
 
             self.trans = tf.get_variable(
                 "transitions",
@@ -205,6 +210,8 @@ class Model(object):
         }
         if is_train:
             feed_dict[self.targets] = np.asarray(tags)
+            # print("tags", np.asarray(tags).shape)
+            # print("self.targets", self.targets)
             feed_dict[self.dropout] = self.config["dropout_keep"]
         return feed_dict
 
