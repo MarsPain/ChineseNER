@@ -267,14 +267,17 @@ class Model(object):
             tags = batch[-1]
             lengths, scores = self.run_step(sess, False, batch)
             batch_paths = self.decode(scores, lengths, trans)
+            # print("batch_paths", batch_paths)
             for i in range(len(strings)):
                 result = []
                 string = strings[i][:lengths[i]]
+                # print("string:", string)
                 gold = [id_to_tag[int(x)] for x in tags[i][:lengths[i]]]
                 pred = [id_to_tag[int(x)] for x in batch_paths[i][:lengths[i]]]
                 for char, gold, pred in zip(string, gold, pred):
                     result.append(" ".join([char, gold, pred]))
                 results.append(result)
+        # print("results", results)
         return results
 
     def evaluate_line(self, sess, inputs, id_to_tag):
