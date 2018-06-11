@@ -58,15 +58,25 @@ inputs = [[[0, 0, 0, 1], [0, 0, 1, 0], [0, 0, 1, 0], [0, 0, 0, 1]],
 # inputs = inputs*weight_matrix
 # print("inputs", inputs)
 #通过字典初始化权重参数矩阵，然后通过tensor点乘加入权重参数
+# inputs = tf.convert_to_tensor(inputs)
+# weight_list = [1, 1, 2, 1]
+# weight_matrix_numpy = np.ones([3, 4, 4])
+# for i in range(len(weight_matrix_numpy)):
+#     for j in range(len(weight_matrix_numpy[i])):
+#         weight_matrix_numpy[i][j] = weight_list
+# print("weight_matrix_numpy:", weight_matrix_numpy)
+# weight_matrix = tf.convert_to_tensor(weight_matrix_numpy)
+# weight_matrix = tf.cast(weight_matrix, "int32")
+# inputs = inputs*weight_matrix
+#用tensor完成权重参数的添加
 inputs = tf.convert_to_tensor(inputs)
-weight_list = [1, 1, 2, 1]
-weight_matrix_numpy = np.ones([3, 4, 4])
-for i in range(len(weight_matrix_numpy)):
-    for j in range(len(weight_matrix_numpy[i])):
-        weight_matrix_numpy[i][j] = weight_list
+batch_size = array_ops.shape(inputs)[0]
+max_seq_len = array_ops.shape(inputs)[1]
+num_tags = array_ops.shape(inputs)[2]
+weight_matrix = tf.tile([[[1, 1, 2, 1]]], [batch_size, max_seq_len, 1])
+weight_matrix = tf.reshape(weight_matrix, [batch_size, max_seq_len, num_tags])
+weight_matrix_numpy = weight_matrix.eval(session=sess)
 print("weight_matrix_numpy:", weight_matrix_numpy)
-weight_matrix = tf.convert_to_tensor(weight_matrix_numpy)
-weight_matrix = tf.cast(weight_matrix, "int32")
 inputs = inputs*weight_matrix
 #tag_indices=[batch_size, max_seq_len]=[3,4]
 tag_indices = [[3, 2, 2, 3],
