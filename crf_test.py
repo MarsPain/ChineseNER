@@ -176,6 +176,11 @@ def crf_unary_score(tag_indices, sequence_lengths, inputs):
   max_seq_len = array_ops.shape(inputs)[1]
   num_tags = array_ops.shape(inputs)[2]
 
+  weight_matrix = tf.tile([[[1, 1, 1, 1, 1, 1, 1, 1]]], [batch_size, max_seq_len, 1])
+  inputs = tf.cast(inputs, "float32")
+  weight_matrix = tf.cast(weight_matrix, "float32")
+  inputs = inputs*weight_matrix
+
   flattened_inputs = array_ops.reshape(inputs, [-1])
 
   offsets = array_ops.expand_dims(
