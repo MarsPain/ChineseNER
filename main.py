@@ -151,7 +151,7 @@ def train():
 
         # Create a dictionary and a mapping for tags
         _t, tag_to_id, id_to_tag = tag_mapping(train_sentences)
-        # print("tag_to_id", tag_to_id, len(tag_to_id))
+        print("tag_to_id", tag_to_id, len(tag_to_id))
         with open(FLAGS.map_file, "wb") as f:
             pickle.dump([char_to_id, id_to_char, tag_to_id, id_to_tag], f)
     else:
