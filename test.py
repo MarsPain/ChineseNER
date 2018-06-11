@@ -42,6 +42,12 @@ inputs = [[[0, 0, 0, 1], [0, 0, 1, 0], [0, 0, 1, 0], [0, 0, 0, 1]],
 inputs_tensor= tf.convert_to_tensor(inputs)
 inputs_numpy = inputs_tensor.eval(session=sess)
 print("offsets_numpy:", inputs_numpy)
+weight_dict = {0:1, 1:1, 2:2, 3:1}
+for i in range(len(inputs_numpy)):
+    for j in range(len(inputs_numpy[i])):
+        inputs_numpy[i][j] *= weight_dict[np.argmax(inputs_numpy[i][j])]
+print(inputs_numpy)
+inputs= tf.convert_to_tensor(inputs_numpy)
 #tag_indices=[batch_size, max_seq_len]=[3,4]
 tag_indices = [[3, 2, 2, 3],
                [3, 2, 2, 3],
