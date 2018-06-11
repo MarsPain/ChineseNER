@@ -50,13 +50,24 @@ inputs = [[[0, 0, 0, 1], [0, 0, 1, 0], [0, 0, 1, 0], [0, 0, 0, 1]],
 # print(inputs_numpy)
 # inputs= tf.convert_to_tensor(inputs_numpy)
 #通过tensor点乘加入权重参数
-inputs= tf.convert_to_tensor(inputs)
-weight_matrix = [[[1, 1, 2, 1], [1, 1, 2, 1], [1, 1, 2, 1], [1, 1, 2, 1]],
-                 [[1, 1, 2, 1], [1, 1, 2, 1], [1, 1, 2, 1], [1, 1, 2, 1]],
-                 [[1, 1, 2, 1], [1, 1, 2, 1], [1, 1, 2, 1],[1, 1, 2, 1]]]
-weight_matrix = tf.convert_to_tensor(weight_matrix)
+# inputs= tf.convert_to_tensor(inputs)
+# weight_matrix = [[[1, 1, 2, 1], [1, 1, 2, 1], [1, 1, 2, 1], [1, 1, 2, 1]],
+#                  [[1, 1, 2, 1], [1, 1, 2, 1], [1, 1, 2, 1], [1, 1, 2, 1]],
+#                  [[1, 1, 2, 1], [1, 1, 2, 1], [1, 1, 2, 1],[1, 1, 2, 1]]]
+# weight_matrix = tf.convert_to_tensor(weight_matrix)
+# inputs = inputs*weight_matrix
+# print("inputs", inputs)
+#通过字典初始化权重参数矩阵，然后通过tensor点乘加入权重参数
+inputs = tf.convert_to_tensor(inputs)
+weight_list = [1, 1, 2, 1]
+weight_matrix_numpy = np.ones([3, 4, 4])
+for i in range(len(weight_matrix_numpy)):
+    for j in range(len(weight_matrix_numpy[i])):
+        weight_matrix_numpy[i][j] = weight_list
+print("weight_matrix_numpy:", weight_matrix_numpy)
+weight_matrix = tf.convert_to_tensor(weight_matrix_numpy)
+weight_matrix = tf.cast(weight_matrix, "int32")
 inputs = inputs*weight_matrix
-print("inputs", inputs)
 #tag_indices=[batch_size, max_seq_len]=[3,4]
 tag_indices = [[3, 2, 2, 3],
                [3, 2, 2, 3],
