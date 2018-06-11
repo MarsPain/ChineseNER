@@ -1,8 +1,9 @@
 # encoding = utf8
 import numpy as np
 import tensorflow as tf
-from tensorflow.contrib.crf import crf_log_likelihood
+# from tensorflow.contrib.crf import crf_log_likelihood
 from tensorflow.contrib.crf import viterbi_decode
+from crf_test import crf_log_likelihood
 from tensorflow.contrib.layers.python.layers import initializers
 
 import rnncell as rnn
