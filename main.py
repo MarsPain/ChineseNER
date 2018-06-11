@@ -24,15 +24,15 @@ flags.DEFINE_boolean("train",       True,      "Wither train the model")
 # configurations for the model
 #seg_dim为分割特征的维度，分割特征即为词向量，对应的char_dim为自向量的维度，分别对应于
 # 英语文本中的词向量和字符向量
-flags.DEFINE_integer("seg_dim",     30,         "Embedding size for segmentation, 0 if not used")
+flags.DEFINE_integer("seg_dim",     35,         "Embedding size for segmentation, 0 if not used")
 flags.DEFINE_integer("char_dim",    100,        "Embedding size for characters")
 flags.DEFINE_integer("lstm_dim",    100,        "Num of hidden units in LSTM")
 flags.DEFINE_string("tag_schema",   "iobes",    "tagging schema iobes or iob")
 
 # configurations for training
 flags.DEFINE_float("clip",          5,          "Gradient clip")
-flags.DEFINE_float("dropout",       0.7,        "Dropout rate")
-flags.DEFINE_float("batch_size",    30,         "batch size")
+flags.DEFINE_float("dropout",       0.5,        "Dropout rate")
+flags.DEFINE_float("batch_size",    400,         "batch size")
 flags.DEFINE_float("lr",            0.001,      "Initial learning rate")
 flags.DEFINE_string("optimizer",    "adam",     "Optimizer for training")
 flags.DEFINE_boolean("pre_emb",     True,       "Wither use pre-trained embedding")
@@ -51,17 +51,17 @@ flags.DEFINE_string("script",       "conlleval",    "evaluation script")
 flags.DEFINE_string("result_path",  "result",       "Path for results")
 flags.DEFINE_string("emb_file",     "wiki_100.utf8", "Path for pre_trained embedding")
 #用原数据集进行训练和测试
-# flags.DEFINE_string("train_file",   os.path.join("data", "example.train"),  "Path for train data")
-# flags.DEFINE_string("dev_file",     os.path.join("data", "example.dev"),    "Path for dev data")
-# flags.DEFINE_string("test_file",    os.path.join("data", "example.test"),   "Path for test data")
+flags.DEFINE_string("train_file",   os.path.join("data", "example.train"),  "Path for train data")
+flags.DEFINE_string("dev_file",     os.path.join("data", "example.dev"),    "Path for dev data")
+flags.DEFINE_string("test_file",    os.path.join("data", "example.test"),   "Path for test data")
 #用中医证候数据集example_medicine_three进行训练和测试
 # flags.DEFINE_string("train_file",   os.path.join("data", "example_medicine_three.train"),  "Path for train data")
 # flags.DEFINE_string("dev_file",     os.path.join("data", "example_medicine_three.dev"),    "Path for dev data")
 # flags.DEFINE_string("test_file",    os.path.join("data", "example_medicine_three.test"),   "Path for test data")
 #用中医证候数据集example_medicine_all进行训练和测试
-flags.DEFINE_string("train_file",   os.path.join("data", "example_medicine_all.train"),  "Path for train data")
-flags.DEFINE_string("dev_file",     os.path.join("data", "example_medicine_all.dev"),    "Path for dev data")
-flags.DEFINE_string("test_file",    os.path.join("data", "example_medicine_all.test"),   "Path for test data")
+# flags.DEFINE_string("train_file",   os.path.join("data", "example_medicine_all.train"),  "Path for train data")
+# flags.DEFINE_string("dev_file",     os.path.join("data", "example_medicine_all.dev"),    "Path for dev data")
+# flags.DEFINE_string("test_file",    os.path.join("data", "example_medicine_all.test"),   "Path for test data")
 
 
 FLAGS = tf.app.flags.FLAGS
