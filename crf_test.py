@@ -110,6 +110,14 @@ def crf_log_norm(inputs, sequence_lengths, transition_params):
   """
   # Split up the first and rest of the inputs in preparation for the forward
   # algorithm.
+
+  batch_size = array_ops.shape(inputs)[0]
+  max_seq_len = array_ops.shape(inputs)[1]
+  weight_matrix = tf.tile([[[1, 1.2, 1, 1, 1, 1.2, 1, 1]]], [batch_size, max_seq_len, 1])
+  inputs = tf.cast(inputs, "float32")
+  weight_matrix = tf.cast(weight_matrix, "float32")
+  inputs = inputs*weight_matrix
+
   first_input = array_ops.slice(inputs, [0, 0, 0], [-1, 1, -1])
   first_input = array_ops.squeeze(first_input, [1])
   rest_of_input = array_ops.slice(inputs, [0, 1, 0], [-1, -1, -1])
@@ -176,7 +184,7 @@ def crf_unary_score(tag_indices, sequence_lengths, inputs):
   max_seq_len = array_ops.shape(inputs)[1]
   num_tags = array_ops.shape(inputs)[2]
 
-  weight_matrix = tf.tile([[[1, 2, 1, 1, 1, 2, 1, 1]]], [batch_size, max_seq_len, 1])
+  weight_matrix = tf.tile([[[1, 1.2, 1, 1, 1, 1.2, 1, 1]]], [batch_size, max_seq_len, 1])
   inputs = tf.cast(inputs, "float32")
   weight_matrix = tf.cast(weight_matrix, "float32")
   inputs = inputs*weight_matrix
