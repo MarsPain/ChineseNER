@@ -51,17 +51,17 @@ flags.DEFINE_string("script",       "conlleval",    "evaluation script")
 flags.DEFINE_string("result_path",  "result",       "Path for results")
 flags.DEFINE_string("emb_file",     "wiki_100.utf8", "Path for pre_trained embedding")
 #用原数据集进行训练和测试
-flags.DEFINE_string("train_file",   os.path.join("data", "example.train"),  "Path for train data")
-flags.DEFINE_string("dev_file",     os.path.join("data", "example.dev"),    "Path for dev data")
-flags.DEFINE_string("test_file",    os.path.join("data", "example.test"),   "Path for test data")
+# flags.DEFINE_string("train_file",   os.path.join("data", "example.train"),  "Path for train data")
+# flags.DEFINE_string("dev_file",     os.path.join("data", "example.dev"),    "Path for dev data")
+# flags.DEFINE_string("test_file",    os.path.join("data", "example.test"),   "Path for test data")
 #用中医证候数据集example_medicine_three进行训练和测试
 # flags.DEFINE_string("train_file",   os.path.join("data", "example_medicine_three.train"),  "Path for train data")
 # flags.DEFINE_string("dev_file",     os.path.join("data", "example_medicine_three.dev"),    "Path for dev data")
 # flags.DEFINE_string("test_file",    os.path.join("data", "example_medicine_three.test"),   "Path for test data")
 #用中医证候数据集example_medicine_all进行训练和测试
-# flags.DEFINE_string("train_file",   os.path.join("data", "example_medicine_all.train"),  "Path for train data")
-# flags.DEFINE_string("dev_file",     os.path.join("data", "example_medicine_all.dev"),    "Path for dev data")
-# flags.DEFINE_string("test_file",    os.path.join("data", "example_medicine_all.test"),   "Path for test data")
+flags.DEFINE_string("train_file",   os.path.join("data", "example_medicine_all.train"),  "Path for train data")
+flags.DEFINE_string("dev_file",     os.path.join("data", "example_medicine_all.dev"),    "Path for dev data")
+flags.DEFINE_string("test_file",    os.path.join("data", "example_medicine_all.test"),   "Path for test data")
 
 
 FLAGS = tf.app.flags.FLAGS
