@@ -246,7 +246,7 @@ class Model(object):
         start = np.asarray([[small]*self.num_tags +[0]])
         for score, length in zip(logits, lengths):
             score = score[:length]
-            pad = small * np.ones([length, 1])
+            pad = small * np.ones([length, 1])  #pad和small都是用于处理mask的
             logits = np.concatenate([score, pad], axis=1)
             logits = np.concatenate([start, logits], axis=0)
             path, _ = viterbi_decode(logits, matrix)
