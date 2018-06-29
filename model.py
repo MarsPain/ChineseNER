@@ -264,8 +264,9 @@ class Model(object):
         results = []
         trans = self.trans.eval()
         for batch in data_manager.iter_batch():
-            strings = batch[0]
-            tags = batch[-1]
+            # batch = [sentences, chars(word的id), segs(分割特征), tags]
+            strings = batch[0]  #原sentence内容
+            tags = batch[-1]    #原tags
             lengths, scores = self.run_step(sess, False, batch)
             batch_paths = self.decode(scores, lengths, trans)
             # print("batch_paths", batch_paths)
