@@ -32,7 +32,7 @@ flags.DEFINE_string("tag_schema",   "iobes",    "tagging schema iobes or iob")
 # configurations for training
 flags.DEFINE_float("clip",          5,          "Gradient clip")
 flags.DEFINE_float("dropout",       0.7,        "Dropout rate")
-flags.DEFINE_float("batch_size",    30,         "batch size")
+flags.DEFINE_float("batch_size",    1,         "batch size")
 flags.DEFINE_float("lr",            0.001,      "Initial learning rate")
 flags.DEFINE_string("optimizer",    "adam",     "Optimizer for training")
 flags.DEFINE_boolean("pre_emb",     True,       "Wither use pre-trained embedding")
@@ -59,9 +59,13 @@ flags.DEFINE_string("emb_file",     "wiki_100.utf8", "Path for pre_trained embed
 # flags.DEFINE_string("dev_file",     os.path.join("data", "example_medicine_three.dev"),    "Path for dev data")
 # flags.DEFINE_string("test_file",    os.path.join("data", "example_medicine_three.test"),   "Path for test data")
 #用中医证候数据集example_medicine_all进行训练和测试
-flags.DEFINE_string("train_file",   os.path.join("data", "example_medicine_all.train"),  "Path for train data")
-flags.DEFINE_string("dev_file",     os.path.join("data", "example_medicine_all.dev"),    "Path for dev data")
-flags.DEFINE_string("test_file",    os.path.join("data", "example_medicine_all.test"),   "Path for test data")
+# flags.DEFINE_string("train_file",   os.path.join("data", "example_medicine_all.train"),  "Path for train data")
+# flags.DEFINE_string("dev_file",     os.path.join("data", "example_medicine_all.dev"),    "Path for dev data")
+# flags.DEFINE_string("test_file",    os.path.join("data", "example_medicine_all.test"),   "Path for test data")
+#对上市公司公告信息进行训练和测试
+flags.DEFINE_string("train_file",   os.path.join("data", "announce.train"),  "Path for train data")
+flags.DEFINE_string("dev_file",     os.path.join("data", "announce.dev"),    "Path for dev data")
+flags.DEFINE_string("test_file",    os.path.join("data", "announce.test"),   "Path for test data")
 
 
 FLAGS = tf.app.flags.FLAGS
