@@ -31,15 +31,15 @@ flags.DEFINE_string("tag_schema",   "iobes",    "tagging schema iobes or iob")
 
 # configurations for training
 flags.DEFINE_float("clip",          5,          "Gradient clip")
-flags.DEFINE_float("dropout",       0.7,        "Dropout rate")
-flags.DEFINE_float("batch_size",    1,         "batch size")
+flags.DEFINE_float("dropout",       0.5,        "Dropout rate")
+flags.DEFINE_float("batch_size",    5,         "batch size")
 flags.DEFINE_float("lr",            0.001,      "Initial learning rate")
 flags.DEFINE_string("optimizer",    "adam",     "Optimizer for training")
 flags.DEFINE_boolean("pre_emb",     True,       "Wither use pre-trained embedding")
 flags.DEFINE_boolean("zeros",       False,      "Wither replace digits with zero")
 flags.DEFINE_boolean("lower",       True,       "Wither lower case")
 
-flags.DEFINE_integer("max_epoch",   10,        "maximum training epochs")
+flags.DEFINE_integer("max_epoch",   20,        "maximum training epochs")
 flags.DEFINE_integer("steps_check", 100,        "steps per checkpoint")
 flags.DEFINE_string("ckpt_path",    "ckpt",      "Path to save model")
 flags.DEFINE_string("summary_path", "summary",      "Path to store summaries")
@@ -178,11 +178,11 @@ def train():
     )
     # print("dev_data:", dev_data, len(dev_data))
     print("%i / %i / %i sentences in train / dev / test." % (
-        len(train_data), 0, len(test_data)))
+        len(train_data), len(dev_data), len(test_data)))
 
     train_manager = BatchManager(train_data, int(FLAGS.batch_size))
-    dev_manager = BatchManager(dev_data, 100)
-    test_manager = BatchManager(test_data, 100)
+    dev_manager = BatchManager(dev_data, int(FLAGS.batch_size))
+    test_manager = BatchManager(test_data, int(FLAGS.batch_size))
     # make path for store log and model if not exist
     make_path(FLAGS)
     if os.path.isfile(FLAGS.config_file):
@@ -198,7 +198,7 @@ def train():
 
     # limit GPU memory
     tf_config = tf.ConfigProto()
-    tf_config.gpu_options.allow_growth = True
+    # tf_config.gpu_options.allow_growth = True
     steps_per_epoch = train_manager.len_data
     with tf.Session(config=tf_config) as sess:
         model = create_model(sess, Model, FLAGS.ckpt_path, load_word2vec, config, id_to_char, logger)
