@@ -16,8 +16,8 @@ from data_utils import load_word2vec, create_input, input_from_line, BatchManage
 
 flags = tf.app.flags
 #若要训练则将clean和train设置为True
-flags.DEFINE_boolean("clean",       False,      "clean train folder")
-flags.DEFINE_boolean("train",       False,      "Wither train the model")
+flags.DEFINE_boolean("clean",       True,      "clean train folder")
+flags.DEFINE_boolean("train",       True,      "Wither train the model")
 #若要通过自己的输入进行验证则将clean和train均设置为False
 # flags.DEFINE_boolean("clean",       False,      "clean train folder")
 # flags.DEFINE_boolean("train",       False,      "Wither train the model")
@@ -32,7 +32,7 @@ flags.DEFINE_string("tag_schema",   "iobes",    "tagging schema iobes or iob")
 # configurations for training
 flags.DEFINE_float("clip",          5,          "Gradient clip")
 flags.DEFINE_float("dropout",       0.5,        "Dropout rate")
-flags.DEFINE_float("batch_size",    64,         "batch size")
+flags.DEFINE_float("batch_size",    5,         "batch size")
 flags.DEFINE_float("lr",            0.001,      "Initial learning rate")
 flags.DEFINE_string("optimizer",    "adam",     "Optimizer for training")
 flags.DEFINE_boolean("pre_emb",     True,       "Wither use pre-trained embedding")
@@ -41,7 +41,7 @@ flags.DEFINE_boolean("lower",       True,       "Wither lower case")
 
 flags.DEFINE_integer("max_epoch",   20,        "maximum training epochs")
 flags.DEFINE_integer("steps_check", 100,        "steps per checkpoint")
-flags.DEFINE_string("ckpt_path",    "ckpt",      "Path to save model")
+flags.DEFINE_string("ckpt_path",    "hetong_ckpt",      "Path to save model")
 flags.DEFINE_string("summary_path", "summary",      "Path to store summaries")
 flags.DEFINE_string("log_file",     "train.log",    "File for log")
 flags.DEFINE_string("map_file",     "maps.pkl",     "file for maps")
@@ -59,13 +59,13 @@ flags.DEFINE_string("emb_file",     "wiki_100.utf8", "Path for pre_trained embed
 # flags.DEFINE_string("dev_file",     os.path.join("data", "example_medicine_three.dev"),    "Path for dev data")
 # flags.DEFINE_string("test_file",    os.path.join("data", "example_medicine_three.test"),   "Path for test data")
 #用中医证候数据集example_medicine_all进行训练和测试
-flags.DEFINE_string("train_file",   os.path.join("data", "example_medicine_all.train"),  "Path for train data")
-flags.DEFINE_string("dev_file",     os.path.join("data", "example_medicine_all.dev"),    "Path for dev data")
-flags.DEFINE_string("test_file",    os.path.join("data", "example_medicine_all.test"),   "Path for test data")
+# flags.DEFINE_string("train_file",   os.path.join("data", "example_medicine_all.train"),  "Path for train data")
+# flags.DEFINE_string("dev_file",     os.path.join("data", "example_medicine_all.dev"),    "Path for dev data")
+# flags.DEFINE_string("test_file",    os.path.join("data", "example_medicine_all.test"),   "Path for test data")
 #对上市公司公告信息进行训练和测试
-# flags.DEFINE_string("train_file",   os.path.join("data", "announce.train"),  "Path for train data")
-# flags.DEFINE_string("dev_file",     os.path.join("data", "announce.dev"),    "Path for dev data")
-# flags.DEFINE_string("test_file",    os.path.join("data", "announce.test"),   "Path for test data")
+flags.DEFINE_string("train_file",   os.path.join("data", "announce.train"),  "Path for train data")
+flags.DEFINE_string("dev_file",     os.path.join("data", "announce.dev"),    "Path for dev data")
+flags.DEFINE_string("test_file",    os.path.join("data", "announce.test"),   "Path for test data")
 
 
 FLAGS = tf.app.flags.FLAGS
@@ -182,7 +182,7 @@ def train():
 
     train_manager = BatchManager(train_data, int(FLAGS.batch_size))
     dev_manager = BatchManager(dev_data, int(FLAGS.batch_size))
-    test_manager = BatchManager(test_data, int(FLAGS.batch_size))
+    # test_manager = BatchManager(test_data, int(FLAGS.batch_size))
     # make path for store log and model if not exist
     make_path(FLAGS)
     if os.path.isfile(FLAGS.config_file):
@@ -218,7 +218,7 @@ def train():
             best = evaluate(sess, model, "dev", dev_manager, id_to_tag, logger)
             if best:
                 save_model(sess, model, FLAGS.ckpt_path, logger)
-            evaluate(sess, model, "test", test_manager, id_to_tag, logger)
+            # evaluate(sess, model, "test", test_manager, id_to_tag, logger)
 
 
 def evaluate_line():
