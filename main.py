@@ -16,8 +16,8 @@ from data_utils import load_word2vec, create_input, input_from_line, BatchManage
 
 flags = tf.app.flags
 #若要训练则将clean和train设置为True
-flags.DEFINE_boolean("clean",       True,      "clean train folder")
-flags.DEFINE_boolean("train",       True,      "Wither train the model")
+flags.DEFINE_boolean("clean",       False,      "clean train folder")
+flags.DEFINE_boolean("train",       False,      "Wither train the model")
 #若要通过自己的输入进行验证则将clean和train均设置为False
 # flags.DEFINE_boolean("clean",       False,      "clean train folder")
 # flags.DEFINE_boolean("train",       False,      "Wither train the model")
@@ -32,7 +32,7 @@ flags.DEFINE_string("tag_schema",   "iobes",    "tagging schema iobes or iob")
 # configurations for training
 flags.DEFINE_float("clip",          5,          "Gradient clip")
 flags.DEFINE_float("dropout",       0.5,        "Dropout rate")
-flags.DEFINE_float("batch_size",    5,         "batch size")
+flags.DEFINE_float("batch_size",    64,         "batch size")
 flags.DEFINE_float("lr",            0.001,      "Initial learning rate")
 flags.DEFINE_string("optimizer",    "adam",     "Optimizer for training")
 flags.DEFINE_boolean("pre_emb",     True,       "Wither use pre-trained embedding")
@@ -59,13 +59,13 @@ flags.DEFINE_string("emb_file",     "wiki_100.utf8", "Path for pre_trained embed
 # flags.DEFINE_string("dev_file",     os.path.join("data", "example_medicine_three.dev"),    "Path for dev data")
 # flags.DEFINE_string("test_file",    os.path.join("data", "example_medicine_three.test"),   "Path for test data")
 #用中医证候数据集example_medicine_all进行训练和测试
-# flags.DEFINE_string("train_file",   os.path.join("data", "example_medicine_all.train"),  "Path for train data")
-# flags.DEFINE_string("dev_file",     os.path.join("data", "example_medicine_all.dev"),    "Path for dev data")
-# flags.DEFINE_string("test_file",    os.path.join("data", "example_medicine_all.test"),   "Path for test data")
+flags.DEFINE_string("train_file",   os.path.join("data", "example_medicine_all.train"),  "Path for train data")
+flags.DEFINE_string("dev_file",     os.path.join("data", "example_medicine_all.dev"),    "Path for dev data")
+flags.DEFINE_string("test_file",    os.path.join("data", "example_medicine_all.test"),   "Path for test data")
 #对上市公司公告信息进行训练和测试
-flags.DEFINE_string("train_file",   os.path.join("data", "announce.train"),  "Path for train data")
-flags.DEFINE_string("dev_file",     os.path.join("data", "announce.dev"),    "Path for dev data")
-flags.DEFINE_string("test_file",    os.path.join("data", "announce.test"),   "Path for test data")
+# flags.DEFINE_string("train_file",   os.path.join("data", "announce.train"),  "Path for train data")
+# flags.DEFINE_string("dev_file",     os.path.join("data", "announce.dev"),    "Path for dev data")
+# flags.DEFINE_string("test_file",    os.path.join("data", "announce.test"),   "Path for test data")
 
 
 FLAGS = tf.app.flags.FLAGS
@@ -229,19 +229,27 @@ def evaluate_line():
     tf_config.gpu_options.allow_growth = True
     with open(FLAGS.map_file, "rb") as f:
         char_to_id, id_to_char, tag_to_id, id_to_tag = pickle.load(f)
+    test_sentences = load_sentences(FLAGS.test_file, FLAGS.lower, FLAGS.zeros)
+    test_data = prepare_dataset(test_sentences, char_to_id, tag_to_id, FLAGS.lower)
+    test_manager = BatchManager(test_data, 1)
     with tf.Session(config=tf_config) as sess:
         model = create_model(sess, Model, FLAGS.ckpt_path, load_word2vec, config, id_to_char, logger)
-        while True:
-            # try:
-            #     line = input("请输入测试句子:")
-            #     result = model.evaluate_line(sess, input_from_line(line, char_to_id), id_to_tag)
-            #     print(result)
-            # except Exception as e:
-            #     logger.info(e)
 
-                line = input("请输入测试句子:")
-                result = model.evaluate_line(sess, input_from_line(line, char_to_id), id_to_tag)
-                print(result)
+        #对整个数据集进行预测
+        evaluate(sess, model, "test", test_manager, id_to_tag, logger)
+
+        #对单个句子进行预测
+        # while True:
+        #     # try:
+        #     #     line = input("请输入测试句子:")
+        #     #     result = model.evaluate_line(sess, input_from_line(line, char_to_id), id_to_tag)
+        #     #     print(result)
+        #     # except Exception as e:
+        #     #     logger.info(e)
+        #
+        #         line = input("请输入测试句子:")
+        #         result = model.evaluate_line(sess, input_from_line(line, char_to_id), id_to_tag)
+        #         print(result)
 
 
 def main(_):
