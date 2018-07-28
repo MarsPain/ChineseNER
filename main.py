@@ -32,16 +32,16 @@ flags.DEFINE_string("tag_schema",   "iobes",    "tagging schema iobes or iob")
 # configurations for training
 flags.DEFINE_float("clip",          5,          "Gradient clip")
 flags.DEFINE_float("dropout",       0.5,        "Dropout rate")
-flags.DEFINE_float("batch_size",    5,         "batch size")
+flags.DEFINE_float("batch_size",    50,         "batch size")
 flags.DEFINE_float("lr",            0.001,      "Initial learning rate")
 flags.DEFINE_string("optimizer",    "adam",     "Optimizer for training")
 flags.DEFINE_boolean("pre_emb",     True,       "Wither use pre-trained embedding")
 flags.DEFINE_boolean("zeros",       False,      "Wither replace digits with zero")
 flags.DEFINE_boolean("lower",       True,       "Wither lower case")
 
-flags.DEFINE_integer("max_epoch",   20,        "maximum training epochs")
+flags.DEFINE_integer("max_epoch",   50,        "maximum training epochs")
 flags.DEFINE_integer("steps_check", 100,        "steps per checkpoint")
-flags.DEFINE_string("ckpt_path",    "hetong_ckpt",      "Path to save model")
+flags.DEFINE_string("ckpt_path",    "3000_ckpt",      "Path to save model")
 flags.DEFINE_string("summary_path", "summary",      "Path to store summaries")
 flags.DEFINE_string("log_file",     "train.log",    "File for log")
 flags.DEFINE_string("map_file",     "maps.pkl",     "file for maps")
@@ -63,9 +63,13 @@ flags.DEFINE_string("emb_file",     "wiki_100.utf8", "Path for pre_trained embed
 # flags.DEFINE_string("dev_file",     os.path.join("data", "example_medicine_all.dev"),    "Path for dev data")
 # flags.DEFINE_string("test_file",    os.path.join("data", "example_medicine_all.test"),   "Path for test data")
 #对上市公司公告信息进行训练和测试
-flags.DEFINE_string("train_file",   os.path.join("data", "announce.train"),  "Path for train data")
-flags.DEFINE_string("dev_file",     os.path.join("data", "announce.dev"),    "Path for dev data")
-flags.DEFINE_string("test_file",    os.path.join("data", "announce.test"),   "Path for test data")
+# flags.DEFINE_string("train_file",   os.path.join("data", "announce.train"),  "Path for train data")
+# flags.DEFINE_string("dev_file",     os.path.join("data", "announce.dev"),    "Path for dev data")
+# flags.DEFINE_string("test_file",    os.path.join("data", "announce.test"),   "Path for test data")
+
+flags.DEFINE_string("train_file",   os.path.join("data", "3000.train"),  "Path for train data")
+flags.DEFINE_string("dev_file",     os.path.join("data", "dev.dev"),    "Path for dev data")
+flags.DEFINE_string("test_file",    os.path.join("data", "test.test"),   "Path for test data")
 
 
 FLAGS = tf.app.flags.FLAGS
