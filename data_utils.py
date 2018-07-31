@@ -135,6 +135,10 @@ def get_seg_features(string):
     """
     seg_feature = []
     # print(string)
+    jieba.load_userdict("data/disease_dict.txt")
+    jieba.load_userdict("data/pattern_dict.txt")
+    jieba.load_userdict("data/symptom_dict1.txt")
+    jieba.load_userdict("data/treat_dict.txt")
     for word in jieba.cut(string):
         # print(word)
         if len(word) == 1:
