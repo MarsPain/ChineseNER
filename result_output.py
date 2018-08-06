@@ -1,10 +1,15 @@
 import os
 
-path_ner_result = "result/ner_predict_test.utf8"
-path_result = "result/result.csv"
+path_data_all = "data/data_all_fangji.csv"  # 原方剂数据集
+path_ner_result = "result/ner_predict_test.utf8"    # 命名实体识别结果
 
 
-def output_data(ner_result, result):
+def get_data(ner_result):
+    """
+    从命名实体识别结果中获取标准的实体词
+    :param ner_result:命名实体识别结果的文件
+    :return:
+    """
     with open(ner_result, "r", encoding="utf-8") as f_ner:
         entity = ""  # 用于保存一个实体
         string_entity = []    # 用于保存一个方剂的实体
@@ -33,8 +38,20 @@ def output_data(ner_result, result):
                     entity = ""
     print(string)
 
+
+# 先根据四个词库创建总词库dict_old进行对比，然后找到被模型发现的新词，总结成dict_new
+def find_new_entity():
+    pass
+
+
+# 将实体词写入原方剂数据集中
+def write_to_data(data_all):
+    pass
+
+
 if __name__ == "__main__":
-    output_data(path_ner_result, path_result)
+    get_data(path_ner_result)
+    write_to_data(path_data_all)
 
 
 def output_data_beifen(model_name, path_model_name):
