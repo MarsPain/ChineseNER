@@ -1,30 +1,31 @@
 import os
+import pandas as pd
 
 path_data_all = "data/data_all_fangji.csv"  # 原方剂数据集
 path_ner_result = "result/ner_predict_test.utf8"    # 命名实体识别结果
-path_result = "result/result.txt"   # 存储被识别出来的实体的标准表示
+path_result = "result/result.csv"   # 存储被识别出来的实体的标准表示
 path_entity_new = "result/entity_new.txt"  # 存储被识别出来的原词库中不存在的实体（后期进行人工审核，统计其中被发现的新词）
 
 
 def get_data():
     """
     从命名实体识别结果中获取标准的实体词
-    :param ner_result:命名实体识别结果的文件
     :return:
     """
     with open(path_ner_result, "r", encoding="utf-8") as f_ner:
         entity = ""  # 用于保存一个实体
-        string_entity = []    # 用于保存一个方剂的实体
-        string = ""  # 用于保存所有实体
+        entity_list = []    # 用于保存一个方剂的所有实体
+        entity_all = []  # 用于保存所有方剂的实体
         lines = f_ner.readlines()
         for line in lines:
             char_tag_predict_list = line.split()
             # print("char_tag_predict_list:", char_tag_predict_list)
             if len(char_tag_predict_list) == 0:
-                # print("string_entity:", string_entity)
-                string = string + "、".join(string_entity) + "\n"    # 用join拼接字符串更为方便
-                # print("string:", string)
-                string_entity = []
+                # print("entity_list:", entity_list)
+                # 每个子列表拼接成字符串，否则若直接输出列表到文件，导致后续读取数据不方便，另外，用join拼接字符串更为方便
+                entity_all.append("、".join(entity_list))
+                # print("entity_all:", entity_all)
+                entity_list = []
             elif char_tag_predict_list[-1] == "O":
                 continue
             else:
@@ -36,11 +37,14 @@ def get_data():
                     entity += char
                 elif predict_loc == "E":
                     entity += char
-                    string_entity.append(entity)
+                    entity_list.append(entity)
                     entity = ""
-    # print(string)
-    with open(path_result, "w", encoding="utf-8") as f:
-        f.write(string)
+    print("entity_all:", entity_all)
+    entity_all_series = pd.Series(entity_all, name="NER_result")
+    # print("entity_all_series:", entity_all_series)
+    entity_all_series = pd.DataFrame(entity_all_series)  # 转换成DataFrame才能将列名name输入到csv中
+    # print("entity_all_series:", entity_all_series)
+    entity_all_series.to_csv(path_result, index=False, encoding="utf-8")
 
 
 def find_new_entity():
@@ -58,14 +62,12 @@ def find_new_entity():
                 entity = line.strip()
                 set_old.add(entity)
     print("set_old:", set_old)
-    set_ner = set()
-    with open(path_result, "r", encoding="utf-8") as f:
-        lines = f.readlines()
-        for line in lines:
-            entity_list = line.strip().split("、")
-            # print(entity_list)
-            for entity in entity_list:
-                set_ner.add(entity)
+    set_ner = set()  # 用于保存算法识别出的实体词
+    entity_ner_all = pd.read_csv(path_result)
+    for i in range(entity_ner_all.shape[0]):
+        entity_ner_list = entity_ner_all["NER_result"].loc[i].split("、")
+        for entity in entity_ner_list:
+            set_ner.add(entity)
     print("set_ner:", set_ner)
     set_new = set_ner - set_old  # 得到两个集合的差集（set_ner中set_old中未出现的新实体）
     print("set_new:", set_new)
@@ -77,10 +79,10 @@ def find_new_entity():
 
 # 将实体词写入原方剂数据集中
 def write_to_data():
-    pass
+    data_result = pd.read_csv()
 
 
 if __name__ == "__main__":
     # get_data()
-    # find_new_entity()
-    write_to_data()
+    find_new_entity()
+    # write_to_data()
