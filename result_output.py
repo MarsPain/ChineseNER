@@ -4,6 +4,7 @@ import pandas as pd
 path_data_all = "data/data_all_fangji.csv"  # 原方剂数据集
 path_ner_result = "result/ner_predict_test.utf8"    # 命名实体识别结果
 path_result = "result/result.csv"   # 存储被识别出来的实体的标准表示
+path_data_all_ner = "result/data_all_ner.csv"   # 将命名实体识别结果写到原方剂数据集中
 path_entity_new = "result/entity_new.txt"  # 存储被识别出来的原词库中不存在的实体（后期进行人工审核，统计其中被发现的新词）
 
 
@@ -77,12 +78,22 @@ def find_new_entity():
         f_new.write(entity_string)
 
 
-# 将实体词写入原方剂数据集中
 def write_to_data():
-    data_result = pd.read_csv()
+    """
+    将NER算法的实体识别结果写入到原方剂数据集中
+    :return:
+    """
+    data_all = pd.read_csv(path_data_all)
+    result = pd.read_csv(path_result)
+    # print(result)
+    print(result.info())
+    data_all.insert(11, "NER_result", None)
+    data_all["NER_result"] = result["NER_result"]
+    print(data_all.info())
+    data_all.to_csv(path_data_all_ner, encoding="utf-8")
 
 
 if __name__ == "__main__":
-    # get_data()
+    get_data()
     find_new_entity()
-    # write_to_data()
+    write_to_data()
