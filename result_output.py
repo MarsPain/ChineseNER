@@ -53,7 +53,7 @@ def find_new_entity():
     利用集合的差集，寻找识别出的实体中未出现在原实体库中的新实体，用以后续的研究
     :return:
     """
-    sets_name_list = ["pattern", "symptom", "treat", "diseases"]    # 四个原实体词库的文件名
+    sets_name_list = ["diseases", "pattern", "treat", "symptom"]    # 四个原实体词库的文件名（病名、证型、治疗手段、症状）
     set_old = set()  # 用于保存原实体词库中的词库
     for set_name in sets_name_list:
         path_set = os.path.join("data", set_name+".txt")
