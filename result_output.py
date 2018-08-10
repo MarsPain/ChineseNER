@@ -64,9 +64,9 @@ def get_data():
     entity_symptom_all_series = pd.Series(entity_symptom_all, name="NER_symptom")
     entity_all_list = [entity_diseases_all_series, entity_pattern_all_series, entity_treat_all_series,
                        entity_symptom_all_series]
-    print("entity_all_list:", entity_all_list)
+    # print("entity_all_list:", entity_all_list)
     entity_all_series = pd.concat(entity_all_list, axis=1)
-    print("entity_all_series:", entity_all_series)
+    # print("entity_all_series:", entity_all_series)
     entity_all_series.to_csv(path_result, index=False, encoding="utf-8")
 
 
@@ -76,28 +76,46 @@ def find_new_entity():
     :return:
     """
     sets_name_list = ["diseases", "pattern", "treat", "symptom"]    # 四个原实体词库的文件名（病名、证型、治疗手段、症状）
-    set_old = set()  # 用于保存原实体词库中的词库
-    for set_name in sets_name_list:
-        path_set = os.path.join("data", set_name+".txt")
+    set_old_list = [set(), set(), set(), set()]  # 用于保存原实体词库中的不同实体的集合列表
+    for index, set_name in enumerate(sets_name_list):
+        path_set = os.path.join("data", set_name+"_7000.txt")
         with open(path_set, "r", encoding="utf-8") as f_set:
             lines = f_set.readlines()
             for line in lines:
                 entity = line.strip()
-                set_old.add(entity)
-    print("set_old:", set_old)
-    set_ner = set()  # 用于保存算法识别出的实体词
+                set_old_list[index].add(entity)
+    # 保存原实体词库中不同实体的四个集合
+    set_old_diseases = set_old_list[0]
+    set_old_pattern = set_old_list[1]
+    set_old_treat = set_old_list[2]
+    set_old_symptom = set_old_list[3]
+    set_ner_list = [set(), set(), set(), set()]  # 用于保存算法识别出的不同实体词的集合列表
     entity_ner_all = pd.read_csv(path_result)
-    for i in range(entity_ner_all.shape[0]):
-        entity_ner_list = entity_ner_all["NER_result"].loc[i].split("、")
-        for entity in entity_ner_list:
-            set_ner.add(entity)
-    print("set_ner:", set_ner)
-    set_new = set_ner - set_old  # 得到两个集合的差集（set_ner中set_old中未出现的新实体）
-    print("set_new:", set_new)
-    with open(path_entity_new, "w", encoding="utf-8") as f_new:  # 将新实体写入txt文件
-        list_new = list(set_new)
-        entity_string = "\n".join(list_new)
-        f_new.write(entity_string)
+    for index, set_name in enumerate(sets_name_list):
+        for i in range(entity_ner_all.shape[0]):
+            entity_ner_string = entity_ner_all["NER_"+set_name].loc[i]
+            # print(entity_ner_string)
+            if str(entity_ner_string) != "nan":
+                entity_ner_list = entity_ner_all["NER_"+set_name].loc[i].split("、")
+                # print(entity_ner_list)
+                for entity in entity_ner_list:
+                    set_ner_list[index].add(entity)
+    # print("set_ner_list:", set_ner_list)
+    # 用于保存算法识别出的不同实体的四个集合
+    set_ner_diseases = set_ner_list[0]
+    set_ner_pattern = set_ner_list[1]
+    set_ner_treat = set_ner_list[2]
+    set_ner_symptom = set_ner_list[3]
+    # 得到两个集合的差集,即被发现的新词（比如set_ner_diseases中set_old_diseases中未出现的新实体）
+    set_new_diseases = set_ner_diseases - set_old_diseases
+    set_new_pattern = set_ner_pattern - set_old_pattern
+    set_new_treat = set_ner_treat - set_old_treat
+    set_new_symptom = set_ner_symptom - set_old_symptom
+    print(set_new_symptom)
+    # with open(path_entity_new, "w", encoding="utf-8") as f_new:  # 将新实体写入txt文件
+    #     list_new = list(set_new)
+    #     entity_string = "\n".join(list_new)
+    #     f_new.write(entity_string)
 
 
 def write_to_data():
@@ -109,13 +127,19 @@ def write_to_data():
     result = pd.read_csv(path_result)
     # print(result)
     print(result.info())
-    data_all.insert(11, "NER_result", None)
-    data_all["NER_result"] = result["NER_result"]
+    data_all.insert(11, "NER_diseases", None)
+    data_all.insert(12, "NER_pattern", None)
+    data_all.insert(13, "NER_treat", None)
+    data_all.insert(14, "NER_symptom", None)
+    data_all["NER_diseases"] = result["NER_diseases"]
+    data_all["NER_pattern"] = result["NER_pattern"]
+    data_all["NER_treat"] = result["NER_treat"]
+    data_all["NER_symptom"] = result["NER_symptom"]
     print(data_all.info())
     data_all.to_csv(path_data_all_ner, encoding="utf-8")
 
 
 if __name__ == "__main__":
-    get_data()
-    # find_new_entity()
+    # get_data()
+    find_new_entity()
     # write_to_data()
