@@ -10,41 +10,63 @@ path_entity_new = "result/entity_new.txt"  # 存储被识别出来的原词库�
 
 def get_data():
     """
-    从命名实体识别结果中获取标准的实体词
+    从命名实体识别结果中获取标准的实体词，并输出成CSV、按照不同实体类别排列成不同的列
     :return:
     """
     with open(path_ner_result, "r", encoding="utf-8") as f_ner:
         entity = ""  # 用于保存一个实体
-        entity_list = []    # 用于保存一个方剂的所有实体
-        entity_all = []  # 用于保存所有方剂的实体
+        entity_diseases_list = []    # 用于保存一个方剂的所有病名实体
+        entity_pattern_list = []    # 用于保存一个方剂的所有证型实体
+        entity_treat_list = []    # 用于保存一个方剂的所有治疗手段实体
+        entity_symptom_list = []    # 用于保存一个方剂的所有症状实体
+        entity_diseases_all = []    # 用于保存所有方剂的所有病名实体
+        entity_pattern_all = []    # 用于保存所有方剂的所有证型实体
+        entity_treat_all = []    # 用于保存所有方剂的所有治疗手段实体
+        entity_symptom_all = []    # 用于保存所有方剂的所有症状实体
         lines = f_ner.readlines()
         for line in lines:
             char_tag_predict_list = line.split()
             # print("char_tag_predict_list:", char_tag_predict_list)
             if len(char_tag_predict_list) == 0:
-                # print("entity_list:", entity_list)
                 # 每个子列表拼接成字符串，否则若直接输出列表到文件，导致后续读取数据不方便，另外，用join拼接字符串更为方便
-                entity_all.append("、".join(entity_list))
-                # print("entity_all:", entity_all)
-                entity_list = []
+                entity_diseases_all.append("、".join(entity_diseases_list))
+                entity_pattern_all.append("、".join(entity_pattern_list))
+                entity_treat_all.append("、".join(entity_treat_list))
+                entity_symptom_all.append("、".join(entity_symptom_list))
+                entity_diseases_list = []
+                entity_pattern_list = []
+                entity_treat_list = []
+                entity_symptom_list = []
             elif char_tag_predict_list[-1] == "O":
                 continue
             else:
                 char = char_tag_predict_list[0]  # 被标注的字符
                 predict = char_tag_predict_list[-1]  # NER模型的预测
                 predict_loc = predict[0]   # 字符在实体中的位置(B/I/E)
+                predict_type = predict[-1]  # 字符所在实体的类型
                 if predict_loc == "B" or predict_loc == "I":
                     # print("entity:", entity)
                     entity += char
                 elif predict_loc == "E":
                     entity += char
-                    entity_list.append(entity)
+                    if predict_type == "0":
+                        entity_diseases_list.append(entity)
+                    elif predict_type == "1":
+                        entity_pattern_list.append(entity)
+                    elif predict_type == "2":
+                        entity_treat_list.append(entity)
+                    elif predict_type == "3":
+                        entity_symptom_list.append(entity)
                     entity = ""
-    print("entity_all:", entity_all)
-    entity_all_series = pd.Series(entity_all, name="NER_result")
-    # print("entity_all_series:", entity_all_series)
-    entity_all_series = pd.DataFrame(entity_all_series)  # 转换成DataFrame才能将列名name输入到csv中
-    # print("entity_all_series:", entity_all_series)
+    entity_diseases_all_series = pd.Series(entity_diseases_all, name="NER_diseases")
+    entity_pattern_all_series = pd.Series(entity_pattern_all, name="NER_pattern")
+    entity_treat_all_series = pd.Series(entity_treat_all, name="NER_treat")
+    entity_symptom_all_series = pd.Series(entity_symptom_all, name="NER_symptom")
+    entity_all_list = [entity_diseases_all_series, entity_pattern_all_series, entity_treat_all_series,
+                       entity_symptom_all_series]
+    print("entity_all_list:", entity_all_list)
+    entity_all_series = pd.concat(entity_all_list, axis=1)
+    print("entity_all_series:", entity_all_series)
     entity_all_series.to_csv(path_result, index=False, encoding="utf-8")
 
 
@@ -95,5 +117,5 @@ def write_to_data():
 
 if __name__ == "__main__":
     get_data()
-    find_new_entity()
-    write_to_data()
+    # find_new_entity()
+    # write_to_data()
