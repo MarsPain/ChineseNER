@@ -120,48 +120,46 @@ def evaluate(sess, model, name, data, id_to_tag, logger):
         return f1 > best_test_f1
 
 
-def train():
-    # load data sets
-    #加载数据集的sentence，并处理成列表，每个sentence中的词及相应的标签也处理成列表
+def get_sentences_dict():
+    # 加载数据集的sentence，并处理成列表，每个sentence中的词及相应的标签也处理成列表
     train_sentences = load_sentences(FLAGS.train_file, FLAGS.lower, FLAGS.zeros)
     dev_sentences = load_sentences(FLAGS.dev_file, FLAGS.lower, FLAGS.zeros)
-    test_sentences = load_sentences(FLAGS.test_file, FLAGS.lower, FLAGS.zeros)
     # print("dev_sentences:", dev_sentences)
+    test_sentences = load_sentences(FLAGS.test_file, FLAGS.lower, FLAGS.zeros)
 
-    #原数据的标注模式与需要的标注模式不同时用update_tag_scheme对标注模式进行转换
-    # Use selected tagging scheme (IOB / IOBES)
+    # 原数据的标注模式与需要的标注模式不同时用update_tag_scheme对标注模式进行转换，转换成指定的IOB或者IOBES
     # update_tag_scheme(train_sentences, FLAGS.tag_schema)
     # update_tag_scheme(test_sentences, FLAGS.tag_schema)
 
-    # create maps if not exist
-    #os.path.isfile查找是否存在该文件
     if not os.path.isfile(FLAGS.map_file):
-        # create dictionary for word
-        #使用预训练的词向量
+        # 若map_file不存在，则根据数据集和预训练词向量文件初始化各个映射字典
+        # 若使用预训练的词向量
         if FLAGS.pre_emb:
-            #取返回列表的第一个值——字典
-            dico_chars_train = char_mapping(train_sentences, FLAGS.lower)[0]
-            #用预训练字典填充字典：将在预训练词向量文件中存在但是不存在于字典中的词加入字典
+            dico_chars_train = char_mapping(train_sentences, FLAGS.lower)[0]    # 得到train_sentences中字符的字典，键值对为word-词频
+            # 用预训练词向量文件扩充字典（目的为尽可能地扩充字典、使更多字符能基于预训练的词向量进行初始化）并得到word与id的双向映射字典。
             dico_chars, char_to_id, id_to_char = augment_with_pretrained(
                 dico_chars_train.copy(),
                 FLAGS.emb_file,
                 list(itertools.chain.from_iterable(
-                    [[w[0] for w in s] for s in test_sentences])
+                    [[w[0] for w in s] for s in dev_sentences])
                 )
             )
-        #若不使用预训练的词向量
-        else:
-            #直接返回字典与两个映射
+        else:   # 若不使用预训练的词向量
             _c, char_to_id, id_to_char = char_mapping(train_sentences, FLAGS.lower)
-
-        # Create a dictionary and a mapping for tags
-        _t, tag_to_id, id_to_tag = tag_mapping(train_sentences)
+        _t, tag_to_id, id_to_tag = tag_mapping(train_sentences)  # 标签和索引之间的双向映射字典
         print("tag_to_id", tag_to_id, len(tag_to_id))
+        # 将得到的映射字典存入文件，以免重复初始化
         with open(FLAGS.map_file, "wb") as f:
             pickle.dump([char_to_id, id_to_char, tag_to_id, id_to_tag], f)
     else:
+        # 若map_file存在，则直接从文件中恢复各个映射字典
         with open(FLAGS.map_file, "rb") as f:
             char_to_id, id_to_char, tag_to_id, id_to_tag = pickle.load(f)
+    return train_sentences, dev_sentences, test_sentences, char_to_id, id_to_char, tag_to_id, id_to_tag
+
+
+def train():
+    train_sentences, dev_sentences, test_sentences, char_to_id, id_to_char, tag_to_id, id_to_tag = get_sentences_dict()
 
     # prepare data, get a collection of list containing index
     #将sentence中的word和tag进行拆分和处理，得到字序列、字到ID的映射的序列（作为x_train）、

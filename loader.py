@@ -127,27 +127,25 @@ def prepare_dataset(sentences, char_to_id, tag_to_id, lower=False, train=True):
 
     return data
 
-#将字典中未出现但是在预训练文件中存在的词加入字典中并赋值为0（暂时并没有将向量赋值给每个词）
+
 def augment_with_pretrained(dictionary, ext_emb_path, chars):
     """
-    Augment the dictionary with words that have a pretrained embedding.
-    If `words` is None, we add every word that has a pretrained embedding
-    to the dictionary, otherwise, we only add the words that are given by
-    `words` (typically the words in the development and test sets.)
+    用预训练词向量文件扩充字典并得到双向映射字典，扩充原则为：存在于预训练词向量文件ext_emb_path和验证集字符列表chars中
+    但是不存在于dictionary中的词添加到dictionary中，若chars为空，
+    则将所有存在于ext_emb_path但是不存在于dictionary中的词添加到dictionary中。
+    :param dictionary:训练集中字符的字典
+    :param ext_emb_path:预训练词向量文件
+    :param chars:验证集字符列表chars
+    :return:
     """
     print('Loading pretrained embeddings from %s...' % ext_emb_path)
     assert os.path.isfile(ext_emb_path)
-
-    # Load pretrained embeddings from file
+    # 将预训练词向量文件中的所有词存入集合
     pretrained = set([
         line.rstrip().split()[0].strip()
         for line in codecs.open(ext_emb_path, 'r', 'utf-8')
         if len(ext_emb_path) > 0
     ])
-
-    # We either add every word in the pretrained file,
-    # or only words given in the `words` list to which
-    # we can assign a pretrained embedding
     if chars is None:
         for char in pretrained:
             if char not in dictionary:
@@ -160,8 +158,7 @@ def augment_with_pretrained(dictionary, ext_emb_path, chars):
                 re.sub('\d', '0', char.lower())
             ]) and char not in dictionary:
                 dictionary[char] = 0
-
-    word_to_id, id_to_word = create_mapping(dictionary)
+    word_to_id, id_to_word = create_mapping(dictionary)  # 根据词频字典得到word-id的双向映射字典
     return dictionary, word_to_id, id_to_word
 
 
