@@ -53,17 +53,17 @@ flags.DEFINE_string("emb_file",     "wiki_100.utf8", "Path for pre_trained embed
 # flags.DEFINE_string("dev_file",     os.path.join("data", "example.dev"),    "Path for dev data")
 # flags.DEFINE_string("test_file",    os.path.join("data", "example.test"),   "Path for test data")
 # 中医数据集小样
-# flags.DEFINE_string("train_file",   os.path.join("data", "example_medicine.train"),  "Path for train data")
-# flags.DEFINE_string("dev_file",     os.path.join("data", "example_medicine.dev"),    "Path for dev data")
-# flags.DEFINE_string("test_file",    os.path.join("data", "example_medicine.test"),   "Path for test data")
+flags.DEFINE_string("train_file",   os.path.join("data", "example_medicine.train"),  "Path for train data")
+flags.DEFINE_string("dev_file",     os.path.join("data", "example_medicine.dev"),    "Path for dev data")
+flags.DEFINE_string("test_file",    os.path.join("data", "example_medicine.test"),   "Path for test data")
 # 上市公司公告信息
 # flags.DEFINE_string("train_file",   os.path.join("data", "announce.train"),  "Path for train data")
 # flags.DEFINE_string("dev_file",     os.path.join("data", "announce.dev"),    "Path for dev data")
 # flags.DEFINE_string("test_file",    os.path.join("data", "announce.test"),   "Path for test data")
 # 全体中医数据集
-flags.DEFINE_string("train_file",   os.path.join("data", "7000.train"),  "Path for train data")
-flags.DEFINE_string("dev_file",     os.path.join("data", "dev.dev"),    "Path for dev data")
-flags.DEFINE_string("test_file",    os.path.join("data", "test.test"),   "Path for test data")
+# flags.DEFINE_string("train_file",   os.path.join("data", "7000.train"),  "Path for train data")
+# flags.DEFINE_string("dev_file",     os.path.join("data", "dev.dev"),    "Path for dev data")
+# flags.DEFINE_string("test_file",    os.path.join("data", "test.test"),   "Path for test data")
 
 FLAGS = tf.flags.FLAGS
 assert FLAGS.clip < 5.1, "gradient clip should't be too much"
@@ -139,7 +139,7 @@ class Main:
             if FLAGS.pre_emb:
                 dico_chars_train = char_mapping(self.train_sentences, FLAGS.lower)[0]    # 得到train_sentences中字符的字典，键值对为word-词频
                 # 用预训练词向量文件扩充字典（目的为尽可能地扩充字典、使更多字符能基于预训练的词向量进行初始化）并得到word与id的双向映射字典。
-                dico_chars, char_to_id, id_to_char = augment_with_pretrained(
+                dico_chars, self.char_to_id, self.id_to_char = augment_with_pretrained(
                     dico_chars_train.copy(),
                     FLAGS.emb_file,
                     list(itertools.chain.from_iterable(
@@ -147,17 +147,16 @@ class Main:
                     )
                 )
             else:   # 若不使用预训练的词向量
-                _c, char_to_id, id_to_char = char_mapping(self.train_sentences, FLAGS.lower)
-            _t, tag_to_id, id_to_tag = tag_mapping(self.train_sentences)  # 标签和索引之间的双向映射字典
-            print("tag_to_id", tag_to_id, len(tag_to_id))
+                _c, self.char_to_id, self.id_to_char = char_mapping(self.train_sentences, FLAGS.lower)
+            _t, self.tag_to_id, self.id_to_tag = tag_mapping(self.train_sentences)  # 标签和索引之间的双向映射字典
+            print("tag_to_id", self.tag_to_id, len(self.tag_to_id))
             # 将得到的映射字典存入文件，以免重复初始化
             with open(FLAGS.map_file, "wb") as f:
-                pickle.dump([char_to_id, id_to_char, tag_to_id, id_to_tag], f)
+                pickle.dump([self.char_to_id, self.id_to_char, self.tag_to_id, self.id_to_tag], f)
         else:
             # 若map_file存在，则直接从文件中恢复各个映射字典
             with open(FLAGS.map_file, "rb") as f:
-                char_to_id, id_to_char, tag_to_id, id_to_tag = pickle.load(f)
-        return self.train_sentences, self.dev_sentences, char_to_id, id_to_char, tag_to_id, id_to_tag
+                self.char_to_id, self.id_to_char, self.tag_to_id, self.id_to_tag = pickle.load(f)
 
     def get_batch_data(self):
         # prepare data, get a collection of list containing index

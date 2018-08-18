@@ -107,6 +107,7 @@ def prepare_dataset(sentences, char_to_id, tag_to_id, lower=False, train=True):
     """
 
     none_index = tag_to_id["O"]
+    print("none_index:", none_index)
 
     def f(x):
         return x.lower() if lower else x
