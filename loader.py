@@ -124,7 +124,6 @@ def prepare_dataset(sentences, char_to_id, tag_to_id, lower=False, train=True):
             tags = [none_index for _ in chars]
         data.append([string, chars, segs, tags])
     # print(segs)
-
     return data
 
 
