@@ -5,35 +5,38 @@ import codecs
 from data_utils import create_dico, create_mapping, zero_digits
 from data_utils import iob2, iob_iobes, get_seg_features, iobes_iob
 
-#加载数据集中的sentence，每个sentence一个列表，然后每个sentence列表中又包含所有词及相应标签的列表
+
 def load_sentences(path, lower, zeros):
     """
-    Load sentences. A line must contain at least a word and its tag.
-    Sentences are separated by empty lines.
+    加载数据集中的语句，将语句中的字符及对应的标签存储为列表，然后每个语句又单独形成一个列表
+    :param path:数据集路径
+    :param lower:是否将英文字符小写
+    :param zeros:是否将数字全赋值为0
+    :return:
     """
-    sentences = []
-    sentence = []
+    sentences = []  # 存储所有语句
+    sentence = []   # 存储一个语句的所有字符及相应的标签
     num = 0
     for line in codecs.open(path, 'r', 'utf8'):
         # print(line)
-        num+=1
-        #根据zero参数的值决定是否将所有的数字设为0
+        num += 1
+        # 根据zero参数的值决定是否将所有的数字设为0
         line = zero_digits(line.rstrip()) if zeros else line.rstrip()
         # print(list(line))
         if not line:
             if len(sentence) > 0:
                 if 'DOCSTART' not in sentence[0][0]:
-                    #每句话结束的时候将sentence添加到sentences中
+                    # 每句话结束的时候将sentence添加到sentences中
                     sentences.append(sentence)
                 sentence = []
         else:
             if line[0] == " ":
                 line = "$" + line[1:]
-                #将每个词与相应的标注存储为一个数组word
+                # 将每个词与相应的标注存储为一个数组word
                 word = line.split()
                 # word[0] = " "
             else:
-                word= line.split()
+                word = line.split()
             assert len(word) >= 2, print([word[0]])
             # 每个word数组添加到sentence中
             sentence.append(word)
@@ -70,16 +73,20 @@ def update_tag_scheme(sentences, tag_scheme):
         else:
             raise Exception('Unknown tagging scheme!')
 
+
 def char_mapping(sentences, lower):
     """
-    Create a dictionary and a mapping of words, sorted by frequency.
+    根据数据集的词频创建字典，然后得到字符与索引id的双向映射字典
+    :param sentences:
+    :param lower:
+    :return:
     """
     chars = [[x[0].lower() if lower else x[0] for x in s] for s in sentences]
-    #用create_dico创建字典
-    dico = create_dico(chars)
+    # 用creat创建字典
+    dico = create_dico(chars)   # 创建字典，键值对为word-词频frequency
     dico["<PAD>"] = 10000001
     dico['<UNK>'] = 10000000
-    #根据字典得到两种映射
+    # 根据字典得到两种映射
     char_to_id, id_to_char = create_mapping(dico)
     print("Found %i unique words (%i in total)" % (
         len(dico), sum(len(x) for x in chars)
@@ -89,10 +96,12 @@ def char_mapping(sentences, lower):
 
 def tag_mapping(sentences):
     """
-    Create a dictionary and a mapping of tags, sorted by frequency.
+    根据数据集的标签频数创建字典，然后得到标签与索引id的双向映射字典
+    :param sentences:
+    :return:
     """
     tags = [[char[-1] for char in s] for s in sentences]
-    dico = create_dico(tags)
+    dico = create_dico(tags)    # 根据标签出现的频数创建字典
     tag_to_id, id_to_tag = create_mapping(dico)
     print("Found %i unique named entity tags" % len(dico))
     return dico, tag_to_id, id_to_tag
@@ -100,12 +109,14 @@ def tag_mapping(sentences):
 
 def prepare_dataset(sentences, char_to_id, tag_to_id, lower=False, train=True):
     """
-    Prepare the dataset. Return a list of lists of dictionaries containing:
-        - word indexes
-        - word char indexes
-        - tag indexes
+    基于各映射字典对训练集和验证集的语句序列进行处理，得到将要输入模型的特征列表以及真实标签列表
+    :param sentences:
+    :param char_to_id:
+    :param tag_to_id:
+    :param lower:
+    :param train:
+    :return:
     """
-
     none_index = tag_to_id["O"]
     print("none_index:", none_index)
 

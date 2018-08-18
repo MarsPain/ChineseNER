@@ -74,14 +74,14 @@ assert FLAGS.optimizer in ["adam", "sgd", "adagrad"]
 
 class Main:
     def __init__(self):
-        self.train_sentences = None  # 用于存储训练集语句，每个语句的字符组成一个列表
-        self.dev_sentences = None  # 用于存储验证集语句
+        self.train_sentences = None  # 用于存储训练集语句中的字符及标签
+        self.dev_sentences = None  # 用于存储验证集语句中字符及标签
         self.char_to_id = None  # 字符char到索引id的映射字典
         self.id_to_char = None  # 索引id到字符char的映射字典
         self.tag_to_id = None   # 标签tag到索引id的映射字典
         self.id_to_tag = None   # 索引id到标签tag的映射字典
-        self.train_batch_iter = None   # 训练集的batch生成器
-        self.dev_batch_iter = None  # 验证集的batch生成器
+        self.train_batch_manager = None   # 训练集的batch管理类
+        self.dev_batch_manager = None  # 验证集的batch管理类
 
     @staticmethod
     def config_model(char_to_id, tag_to_id):
@@ -124,12 +124,16 @@ class Main:
             return f1 > best_test_f1
 
     def get_sentences_dict(self):
-        # 加载数据集的sentence，并处理成列表，每个sentence中的词及相应的标签也处理成列表
+        """
+        加载数据集中的语句，将每个语句的字符和标签存储为列表，然后生成字符和标签与索引id的双向映射字典
+        :return:
+        """
+        # 加载数据集中的语句，将每个语句的字符和标签存储为列表
         self.train_sentences = load_sentences(FLAGS.train_file, FLAGS.lower, FLAGS.zeros)
         self.dev_sentences = load_sentences(FLAGS.dev_file, FLAGS.lower, FLAGS.zeros)
-        # print("dev_sentences:", dev_sentences)
+        # print("dev_sentences:", self.dev_sentences)
 
-        # 原数据的标注模式与需要的标注模式不同时用update_tag_scheme对标注模式进行转换，转换成指定的IOB或者IOBES
+        # 原数据的标注模式与需要的标注模式不同时用update_tag_scheme函数对标注模式进行转换，转换成指定的IOB或者IOBES
         # update_tag_scheme(train_sentences, FLAGS.tag_schema)
         # update_tag_scheme(test_sentences, FLAGS.tag_schema)
 
@@ -137,7 +141,8 @@ class Main:
             # 若map_file不存在，则根据数据集和预训练词向量文件初始化各个映射字典
             # 若使用预训练的词向量
             if FLAGS.pre_emb:
-                dico_chars_train = char_mapping(self.train_sentences, FLAGS.lower)[0]    # 得到train_sentences中字符的字典，键值对为word-词频
+                # 得到train_sentences中字符的字典，键值对为word-词频
+                dico_chars_train = char_mapping(self.train_sentences, FLAGS.lower)[0]
                 # 用预训练词向量文件扩充字典（目的为尽可能地扩充字典、使更多字符能基于预训练的词向量进行初始化）并得到word与id的双向映射字典。
                 dico_chars, self.char_to_id, self.id_to_char = augment_with_pretrained(
                     dico_chars_train.copy(),
@@ -159,55 +164,59 @@ class Main:
                 self.char_to_id, self.id_to_char, self.tag_to_id, self.id_to_tag = pickle.load(f)
 
     def get_batch_data(self):
-        # prepare data, get a collection of list containing index
-        #将sentence中的word和tag进行拆分和处理，得到字序列、字到ID的映射的序列（作为x_train）、
-        #Segment_feature（还没理解作用和意义，原理是用jieba对整个句子进行分词，然后处理得到的某种标签）
-        #   （应该是作为辅助判断的标签、计算损失函数的一部分）（根据源代码注释，是分割特征）、
-        #标签到ID的映射（对于IOBES的编码格式而言，有13种，比如E-ORG和E-PER）（作为y-train）
+        """
+        得到训练集和验证集的batch管理类：首先基于各映射字典对训练集和验证集的语句序列进行处理，得到每个语句的各特征列表以及
+        真实标签列表，然后获取batch管理类，用于生成batch数据
+        :return:
+        """
         train_data = prepare_dataset(self.train_sentences, self.char_to_id, self.tag_to_id, FLAGS.lower)
         dev_data = prepare_dataset(self.dev_sentences, self.char_to_id, self.tag_to_id, FLAGS.lower)
         print("%i / %i  sentences in train / dev ." % (len(train_data), len(dev_data)))
-        self.train_batch_iter = BatchManager(train_data, int(FLAGS.batch_size))
-        self.dev_batch_iter = BatchManager(dev_data, int(FLAGS.batch_size))
+        self.train_batch_manager = BatchManager(train_data, int(FLAGS.batch_size))
+        self.dev_batch_manager = BatchManager(dev_data, int(FLAGS.batch_size))
 
-    def train(self):
-        self.get_sentences_dict()
-        self.get_batch_data()
-        # make path for store log and model if not exist
+    def get_config(self):
+        """
+        从模型参数配置文件中获取参数或者用config_model函数生成参数并存储
+        :return:日志logger及参数列表config
+        """
         make_path(FLAGS)
         if os.path.isfile(FLAGS.config_file):
             config = load_config(FLAGS.config_file)
         else:
             config = self.config_model(self.char_to_id, self.tag_to_id)
             save_config(config, FLAGS.config_file)
-
         log_path = os.path.join("log", FLAGS.log_file)
         logger = get_logger(log_path)
         print_config(config, logger)
+        return logger, config
 
+    def train(self):
+        self.get_sentences_dict()
+        self.get_batch_data()
+        logger, config = self.get_config()
         # limit GPU memory
         tf_config = tf.ConfigProto()
         # tf_config.gpu_options.allow_growth = True
-        steps_per_epoch = self.train_batch_iter.len_data
+        steps_per_epoch = self.train_batch_manager.len_data
         with tf.Session(config=tf_config) as sess:
             model = create_model(sess, Model, FLAGS.ckpt_path, load_word2vec, config, self.id_to_char, logger)
             logger.info("start training")
             loss = []
             for i in range(FLAGS.max_epoch):
-                for batch in self.train_batch_iter.iter_batch(shuffle=True):
+                for batch in self.train_batch_manager.iter_batch(shuffle=True):
                     step, batch_loss = model.run_step(sess, True, batch)
                     loss.append(batch_loss)
                     if step % FLAGS.steps_check == 0:
                         iteration = step // steps_per_epoch + 1
                         logger.info("iteration:{} step:{}/{}, "
                                     "NER loss:{:>9.6f}".format(
-                            iteration, step%steps_per_epoch, steps_per_epoch, np.mean(loss)))
+                            iteration, step % steps_per_epoch, steps_per_epoch, np.mean(loss)))
                         loss = []
-                best = self.evaluate(sess, model, "dev", self.dev_batch_iter, self.id_to_tag, logger)
+                best = self.evaluate(sess, model, "dev", self.dev_batch_manager, self.id_to_tag, logger)
                 if best:
                     save_model(sess, model, FLAGS.ckpt_path, logger)
                 # evaluate(sess, model, "test", test_manager, id_to_tag, logger)
-
 
     def evaluate_line(self):
         config = load_config(FLAGS.config_file)
@@ -222,11 +231,8 @@ class Main:
         test_manager = BatchManager(test_data, 1)
         with tf.Session(config=tf_config) as sess:
             model = create_model(sess, Model, FLAGS.ckpt_path, load_word2vec, config, id_to_char, logger)
-
-            #对整个数据集进行预测
-            self.evaluate(sess, model, "test", test_manager, id_to_tag, logger)
-
-            #对单个句子进行预测
+            self.evaluate(sess, model, "test", test_manager, id_to_tag, logger)  # 对整个数据集进行预测
+            # 对单个句子进行预测
             # while True:
             #     # try:
             #     #     line = input("请输入测试句子:")
@@ -247,6 +253,3 @@ if __name__ == "__main__":
         main.train()
     else:
         main.evaluate_line()
-
-
-

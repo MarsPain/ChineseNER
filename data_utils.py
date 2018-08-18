@@ -8,10 +8,12 @@ import numpy as np
 import jieba
 jieba.initialize()
 
-#创建字典
+
 def create_dico(item_list):
     """
-    Create a dictionary of items from a list of list of items.
+    创建字典，记录每个字符出现的频数
+    :param item_list: 字符列表
+    :return:
     """
     assert type(item_list) is list
     dico = {}
@@ -20,7 +22,6 @@ def create_dico(item_list):
             if item not in dico:
                 dico[item] = 1
             else:
-                #计算词频
                 dico[item] += 1
     return dico
 
@@ -289,21 +290,23 @@ def input_from_line(line, char_to_id):
 
 
 class BatchManager(object):
-
+    """
+    用于生成batch数据的batch管理类
+    """
     def __init__(self, data,  batch_size):
-        self.batch_data = self.sort_and_pad(data, batch_size)
-        self.len_data = len(self.batch_data)
+        self.batch_data = self.get_batch(data, batch_size)  # 根据batch_size生成所有batch数据并存入batch_data列表
+        self.len_data = len(self.batch_data)    # batch数量
 
-    def sort_and_pad(self, data, batch_size):
-        num_batch = int(math.ceil(len(data) /batch_size))
-        sorted_data = sorted(data, key=lambda x: len(x[0]))
+    def get_batch(self, data, batch_size):
+        num_batch = int(math.ceil(len(data) / batch_size))
+        # sorted_data = sorted(data, key=lambda x: len(x[0]))   # 按照序列长度进行排序，此方法废弃
         batch_data = list()
         for i in range(num_batch):
-            batch_data.append(self.pad_data(sorted_data[i*batch_size : (i+1)*batch_size]))
+            # batch_data.append(self.pad_data(sorted_data[i*batch_size:(i+1)*batch_size]))
+            batch_data.append(self.pad_data(data[i*batch_size:(i+1)*batch_size]))
         return batch_data
 
     @staticmethod
-    #填充数据以对齐长度？
     def pad_data(data):
         strings = []
         chars = []
@@ -323,4 +326,4 @@ class BatchManager(object):
         if shuffle:
             random.shuffle(self.batch_data)
         for idx in range(self.len_data):
-            yield self.batch_data[idx]
+            yield self.batch_data[idx]  # 利用生成器逐个返回batch
