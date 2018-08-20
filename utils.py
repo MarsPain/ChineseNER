@@ -52,21 +52,33 @@ def get_logger(log_file):
 #     return eval_lines
 
 
-def test_ner(results, path):
+def result_write_evaluate(results, path, name):
     """
-    Run perl script to evaluate model
+    将对验证集的预测识别结果写入到原数据中并进行输出，然后计算识别的性能；将对测试集的预测识别结果写入到原数据中并进行输出
+    :param results:
+    :param path:
+    :return:
     """
-    output_file = os.path.join(path, "ner_predict_test.utf8")
-    with open(output_file, "w", encoding="utf8") as f:
-        to_write = []
-        for block in results:
-            for line in block:
-                to_write.append(line + "\n")
-            to_write.append("\n")
-
-        f.writelines(to_write)
-    eval_lines = return_report(output_file)
-    return eval_lines
+    if name == "dev":
+        output_file = os.path.join(path, "ner_predict_dev.utf8")
+        with open(output_file, "w", encoding="utf8") as f:
+            to_write = []
+            for block in results:
+                for line in block:
+                    to_write.append(line + "\n")
+                to_write.append("\n")
+            f.writelines(to_write)
+        eval_lines = return_report(output_file)
+        return eval_lines
+    elif name == "test":
+        output_file = os.path.join(path, "ner_predict_test.utf8")
+        with open(output_file, "w", encoding="utf8") as f:
+            to_write = []
+            for block in results:
+                for line in block:
+                    to_write.append(line + "\n")
+                to_write.append("\n")
+            f.writelines(to_write)
 
 
 def print_config(config, logger):

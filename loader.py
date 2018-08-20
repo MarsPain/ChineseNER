@@ -37,7 +37,9 @@ def load_sentences(path, lower, zeros):
                 # word[0] = " "
             else:
                 word = line.split()
-            assert len(word) >= 2, print([word[0]])
+            # assert len(word) >= 2, print([word[0]])  # 若训练数据每一行只有一个字符串，则报错（因为每一行应该是word+标签）
+            if len(word) == 1:
+                word.append("O")
             # 每个word数组添加到sentence中
             sentence.append(word)
     if len(sentence) > 0:
@@ -114,7 +116,7 @@ def prepare_dataset(sentences, char_to_id, tag_to_id, lower=False, train=True):
     :param char_to_id:
     :param tag_to_id:
     :param lower:
-    :param train:
+    :param train:决定对训练集还是测试集进行处理，默认测试集没有标签，所以全部标注为0
     :return:
     """
     none_index = tag_to_id["O"]

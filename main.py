@@ -11,16 +11,16 @@ from loader import load_sentences, update_tag_scheme
 from loader import char_mapping, tag_mapping
 from loader import augment_with_pretrained, prepare_dataset
 from utils import get_logger, make_path, clean, create_model, save_model
-from utils import print_config, save_config, load_config, test_ner
+from utils import print_config, save_config, load_config, result_write_evaluate
 from data_utils import create_input, input_from_line, BatchManager
 
 flags = tf.flags
 # 若要训练则将clean和train设置为True
-flags.DEFINE_boolean("clean",       True,      "clean train folder")
-flags.DEFINE_boolean("train",       True,      "Wither train the model")
+# flags.DEFINE_boolean("clean",       True,      "clean train folder")
+# flags.DEFINE_boolean("train",       True,      "Wither train the model")
 # 若要进行预测则将clean和train均设置为False
-# flags.DEFINE_boolean("clean",       False,      "clean train folder")
-# flags.DEFINE_boolean("train",       False,      "Wither train the model")
+flags.DEFINE_boolean("clean",       False,      "clean train folder")
+flags.DEFINE_boolean("train",       False,      "Wither train the model")
 # 模型参数
 # seg_dim为分割特征的维度，分割特征即为词向量，对应的char_dim为词向量的维度，分别对应于英语文本中的词向量和字符向量
 flags.DEFINE_integer("seg_dim",     20,         "Embedding size for segmentation, 0 if not used")
@@ -36,9 +36,9 @@ flags.DEFINE_string("optimizer",    "adam",     "Optimizer for training")
 flags.DEFINE_boolean("pre_emb",     True,       "Wither use pre-trained embedding")
 flags.DEFINE_boolean("zeros",       False,      "Wither replace digits with zero")
 flags.DEFINE_boolean("lower",       True,       "Wither lower case")
-
 flags.DEFINE_integer("max_epoch",   50,        "maximum training epochs")
 flags.DEFINE_integer("steps_check", 100,        "steps per checkpoint")
+# 文件路径参数设置
 flags.DEFINE_string("ckpt_path",    "ckpt",      "Path to save model")
 flags.DEFINE_string("summary_path", "summary",      "Path to store summaries")
 flags.DEFINE_string("log_file",     "train.log",    "File for log")
@@ -48,6 +48,7 @@ flags.DEFINE_string("config_file",  "config_file",  "File for config")
 flags.DEFINE_string("script",       "conlleval",    "evaluation script")
 flags.DEFINE_string("result_path",  "result",       "Path for results")
 flags.DEFINE_string("emb_file",     "wiki_100.utf8", "Path for pre_trained embedding")
+flags.DEFINE_boolean("predict_line", False, "predict one line data or all dataset")
 # 原示例数据集
 # flags.DEFINE_string("train_file",   os.path.join("data", "example.train"),  "Path for train data")
 # flags.DEFINE_string("dev_file",     os.path.join("data", "example.dev"),    "Path for dev data")
@@ -110,18 +111,23 @@ class Main:
         return config
 
     def evaluate(self, sess, model, name, data, id_to_tag, logger):
-        logger.info("evaluate:{}".format(name))
-        ner_results = model.evaluate(sess, data, id_to_tag)
-        eval_lines = test_ner(ner_results, FLAGS.result_path)
-        for line in eval_lines:
-            logger.info(line)
-        f1 = float(eval_lines[1].strip().split()[-1])
         if name == "dev":
+            logger.info("evaluate dev data......")
+            ner_results = model.evaluate(sess, data, id_to_tag)  # 对验证集进行预测，得到对各个实体的预测
+            # 将预测结果写入到原数据并输出，然后计算并评估识别性能
+            eval_lines = result_write_evaluate(ner_results, FLAGS.result_path, name)
+            for line in eval_lines:
+                logger.info(line)
+            f1 = float(eval_lines[1].strip().split()[-1])
             best_test_f1 = model.best_dev_f1.eval()
             if f1 > best_test_f1:
                 tf.assign(model.best_dev_f1, f1).eval()
                 logger.info("new best dev f1 score:{:>.3f}".format(f1))
             return f1 > best_test_f1
+        elif name == "test":    # 对测试集仅进行预测
+            logger.info("predict data......")
+            ner_results = model.evaluate(sess, data, id_to_tag)
+            result_write_evaluate(ner_results, FLAGS.result_path, name)
 
     def get_sentences_dict(self):
         """
@@ -195,9 +201,9 @@ class Main:
         self.get_sentences_dict()
         self.get_batch_data()
         logger, config = self.get_config()
-        # limit GPU memory
+
         tf_config = tf.ConfigProto()
-        # tf_config.gpu_options.allow_growth = True
+        tf_config.gpu_options.allow_growth = True  # limit GPU memory
         steps_per_epoch = self.train_batch_manager.len_data  # 每一轮epoch的batch数量
         with tf.Session(config=tf_config) as sess:
             model = create_model(sess, Model, FLAGS.ckpt_path, config, self.id_to_char, logger)
@@ -216,32 +222,36 @@ class Main:
                 if best:
                     save_model(sess, model, FLAGS.ckpt_path, logger)
 
-    def evaluate_line(self):
+    def predict(self):
         config = load_config(FLAGS.config_file)
         logger = get_logger(FLAGS.log_file)
-        # limit GPU memory
         tf_config = tf.ConfigProto()
-        tf_config.gpu_options.allow_growth = True
+        tf_config.gpu_options.allow_growth = True   # limit GPU memory
+        # 从训练阶段生成的map_file中恢复各映射字典
         with open(FLAGS.map_file, "rb") as f:
             char_to_id, id_to_char, tag_to_id, id_to_tag = pickle.load(f)
         test_sentences = load_sentences(FLAGS.test_file, FLAGS.lower, FLAGS.zeros)
-        test_data = prepare_dataset(test_sentences, char_to_id, tag_to_id, FLAGS.lower)
+        test_data = prepare_dataset(test_sentences, char_to_id, tag_to_id, FLAGS.lower, train=False)
         test_manager = BatchManager(test_data, 1)
         with tf.Session(config=tf_config) as sess:
             model = create_model(sess, Model, FLAGS.ckpt_path, config, id_to_char, logger)
             self.evaluate(sess, model, "test", test_manager, id_to_tag, logger)  # 对整个数据集进行预测
+
+    @staticmethod
+    def predict_line():
+        config = load_config(FLAGS.config_file)
+        logger = get_logger(FLAGS.log_file)
+        tf_config = tf.ConfigProto()
+        tf_config.gpu_options.allow_growth = True
+        with open(FLAGS.map_file, "rb") as f:
+            char_to_id, id_to_char, tag_to_id, id_to_tag = pickle.load(f)
+        with tf.Session(config=tf_config) as sess:
+            model = create_model(sess, Model, FLAGS.ckpt_path, config, id_to_char, logger)
             # 对单个句子进行预测
-            # while True:
-            #     # try:
-            #     #     line = input("请输入测试句子:")
-            #     #     result = model.evaluate_line(sess, input_from_line(line, char_to_id), id_to_tag)
-            #     #     print(result)
-            #     # except Exception as e:
-            #     #     logger.info(e)
-            #
-            #         line = input("请输入测试句子:")
-            #         result = model.evaluate_line(sess, input_from_line(line, char_to_id), id_to_tag)
-            #         print(result)
+            while True:
+                line = input("请输入测试句子:")
+                result = model.evaluate_line(sess, input_from_line(line, char_to_id), id_to_tag)
+                print(result)
 
 if __name__ == "__main__":
     main = Main()
@@ -249,5 +259,7 @@ if __name__ == "__main__":
         if FLAGS.clean:
             clean(FLAGS)
         main.train()
+    elif FLAGS.predict_line:
+        main.predict_line()
     else:
-        main.evaluate_line()
+        main.predict()
