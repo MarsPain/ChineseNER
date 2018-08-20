@@ -2,7 +2,9 @@ import os
 import json
 import shutil
 import logging
-
+import numpy as np
+import codecs
+import re
 import tensorflow as tf
 from conlleval import return_report
 
@@ -167,24 +169,80 @@ def save_model(sess, model, path, logger):
     logger.info("model saved")
 
 
-def create_model(session, Model_class, path, load_vec, config, id_to_char, logger):
-    # create model, reuse parameters if exists
-    model = Model_class(config)
-
+def create_model(session, model_class, path, config, id_to_char, logger):
+    """
+    创建模型
+    :param session:
+    :param model_class:模型类名
+    :param path:已训练完成的模型参数文件
+    :param config:模型参数列表
+    :param id_to_char:索引id到字符的映射字典
+    :param logger:
+    :return:
+    """
+    model = model_class(config)
     ckpt = tf.train.get_checkpoint_state(path)
+    # 若存在被保存的模型参数，则直接从文件中恢复模型
     if ckpt and tf.train.checkpoint_exists(ckpt.model_checkpoint_path):
         logger.info("Reading model parameters from %s" % ckpt.model_checkpoint_path)
         model.saver.restore(session, ckpt.model_checkpoint_path)
     else:
         logger.info("Created model with fresh parameters.")
         session.run(tf.global_variables_initializer())
-        if config["pre_emb"]:
+        if config["pre_emb"]:   # 若使用预训练的词向量
             emb_weights = session.run(model.char_lookup.read_value())
-            #将预训练文件的词向量加载到字典中
-            emb_weights = load_vec(config["emb_file"],id_to_char, config["char_dim"], emb_weights)
+            # 将预训练文件的词向量加载到字典中
+            emb_weights = load_word2vec(config["emb_file"], id_to_char, config["char_dim"], emb_weights)
             session.run(model.char_lookup.assign(emb_weights))
             logger.info("Load pre-trained embedding.")
     return model
+
+
+def load_word2vec(emb_path, id_to_word, word_dim, old_weights):
+    """
+    从预训练词向量文件中加载词向量，根据emb_path得到键值对word-词向量的字典，然后又根据键值对为id-word的id_to_word，
+    最终得到id-词向量的字典，作为最终的词向量矩阵。
+    :param emb_path:预训练的词向量文件，其数据为word-词向量
+    :param id_to_word:索引id到word的映射字典，键值对为id-word
+    :param word_dim:词向量维度
+    :param old_weights:原词向量参数
+    :return:new_weights[id:vector]
+    """
+    new_weights = old_weights
+    print('Loading pretrained embeddings from {}...'.format(emb_path))
+    pre_trained = {}
+    emb_invalid = 0
+    for i, line in enumerate(codecs.open(emb_path, 'r', 'utf-8')):
+        line = line.rstrip().split()
+        if len(line) == word_dim + 1:
+            pre_trained[line[0]] = np.asarray([float(x) for x in line[1:]]).astype(np.float32)
+        else:
+            emb_invalid += 1
+    if emb_invalid > 0:
+        print('WARNING: %i invalid lines' % emb_invalid)
+    c_found = 0
+    c_lower = 0
+    c_zeros = 0
+    n_words = len(id_to_word)
+    # Lookup table initialization
+    for i in range(n_words):
+        word = id_to_word[i]
+        if word in pre_trained:
+            new_weights[i] = pre_trained[word]
+            c_found += 1
+        elif word.lower() in pre_trained:
+            new_weights[i] = pre_trained[word.lower()]
+            c_lower += 1
+        elif re.sub('\d', '0', word.lower()) in pre_trained:
+            new_weights[i] = pre_trained[
+                re.sub('\d', '0', word.lower())
+            ]
+            c_zeros += 1
+    print('Loaded %i pretrained embeddings.' % len(pre_trained))
+    print('%i / %i (%.4f%%) words have been initialized with ''pretrained embeddings.' %
+          (c_found + c_lower + c_zeros, n_words, 100. * (c_found + c_lower + c_zeros) / n_words))
+    print('%i found directly, %i after lowercasing, ''%i after lowercasing + zero.' % (c_found, c_lower, c_zeros))
+    return new_weights
 
 
 def result_to_json(string, tags):

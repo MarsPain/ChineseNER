@@ -12,7 +12,7 @@ from loader import char_mapping, tag_mapping
 from loader import augment_with_pretrained, prepare_dataset
 from utils import get_logger, make_path, clean, create_model, save_model
 from utils import print_config, save_config, load_config, test_ner
-from data_utils import load_word2vec, create_input, input_from_line, BatchManager
+from data_utils import create_input, input_from_line, BatchManager
 
 flags = tf.flags
 # 若要训练则将clean和train设置为True
@@ -198,9 +198,9 @@ class Main:
         # limit GPU memory
         tf_config = tf.ConfigProto()
         # tf_config.gpu_options.allow_growth = True
-        steps_per_epoch = self.train_batch_manager.len_data
+        steps_per_epoch = self.train_batch_manager.len_data  # 每一轮epoch的batch数量
         with tf.Session(config=tf_config) as sess:
-            model = create_model(sess, Model, FLAGS.ckpt_path, load_word2vec, config, self.id_to_char, logger)
+            model = create_model(sess, Model, FLAGS.ckpt_path, config, self.id_to_char, logger)
             logger.info("start training")
             loss = []
             for i in range(FLAGS.max_epoch):
@@ -209,14 +209,12 @@ class Main:
                     loss.append(batch_loss)
                     if step % FLAGS.steps_check == 0:
                         iteration = step // steps_per_epoch + 1
-                        logger.info("iteration:{} step:{}/{}, "
-                                    "NER loss:{:>9.6f}".format(
+                        logger.info("iteration:{} step:{}/{}, ""NER loss:{:>9.6f}".format(
                             iteration, step % steps_per_epoch, steps_per_epoch, np.mean(loss)))
                         loss = []
                 best = self.evaluate(sess, model, "dev", self.dev_batch_manager, self.id_to_tag, logger)
                 if best:
                     save_model(sess, model, FLAGS.ckpt_path, logger)
-                # evaluate(sess, model, "test", test_manager, id_to_tag, logger)
 
     def evaluate_line(self):
         config = load_config(FLAGS.config_file)
@@ -230,7 +228,7 @@ class Main:
         test_data = prepare_dataset(test_sentences, char_to_id, tag_to_id, FLAGS.lower)
         test_manager = BatchManager(test_data, 1)
         with tf.Session(config=tf_config) as sess:
-            model = create_model(sess, Model, FLAGS.ckpt_path, load_word2vec, config, id_to_char, logger)
+            model = create_model(sess, Model, FLAGS.ckpt_path, config, id_to_char, logger)
             self.evaluate(sess, model, "test", test_manager, id_to_tag, logger)  # 对整个数据集进行预测
             # 对单个句子进行预测
             # while True:
