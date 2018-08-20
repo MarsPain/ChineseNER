@@ -1,11 +1,10 @@
 # encoding = utf8
 import numpy as np
 import tensorflow as tf
-# from tensorflow.contrib.crf import crf_log_likelihood
+from tensorflow.contrib.crf import crf_log_likelihood
 from tensorflow.contrib.crf import viterbi_decode
-from crf_test import crf_log_likelihood
+# from crf_test import crf_log_likelihood
 from tensorflow.contrib.layers.python.layers import initializers
-
 import rnncell as rnn
 from utils import result_to_json
 from data_utils import create_input, iobes_iob
@@ -14,58 +13,38 @@ from data_utils import create_input, iobes_iob
 class Model(object):
     def __init__(self, config):
 
+        # 从参数列表中获取模型参数
         self.config = config
         self.lr = config["lr"]
         self.char_dim = config["char_dim"]
         self.lstm_dim = config["lstm_dim"]
         self.seg_dim = config["seg_dim"]
-
         self.num_tags = config["num_tags"]
         self.num_chars = config["num_chars"]
-        self.num_segs = 4
-
+        self.num_segs = 4   # pass
+        # 设置训练变量
         self.global_step = tf.Variable(0, trainable=False)
         self.best_dev_f1 = tf.Variable(0.0, trainable=False)
         self.best_test_f1 = tf.Variable(0.0, trainable=False)
         self.initializer = initializers.xavier_initializer()
-
-        # add placeholders for the model
-
-        self.char_inputs = tf.placeholder(dtype=tf.int32,
-                                          shape=[None, None],
-                                          name="ChatInputs")
-        self.seg_inputs = tf.placeholder(dtype=tf.int32,
-                                         shape=[None, None],
-                                         name="SegInputs")
-
-        self.targets = tf.placeholder(dtype=tf.int32,
-                                      shape=[None, None],
-                                      name="Targets")
-        # dropout keep prob
-        self.dropout = tf.placeholder(dtype=tf.float32,
-                                      name="Dropout")
+        # 设置占位符
+        self.char_inputs = tf.placeholder(dtype=tf.int32, shape=[None, None], name="ChatInputs")    # 字符特征
+        self.seg_inputs = tf.placeholder(dtype=tf.int32, shape=[None, None], name="SegInputs")  # 分割特征（词特征）
+        self.targets = tf.placeholder(dtype=tf.int32, shape=[None, None], name="Targets")   # 真实标签
+        self.dropout = tf.placeholder(dtype=tf.float32, name="Dropout")
 
         used = tf.sign(tf.abs(self.char_inputs))
         length = tf.reduce_sum(used, reduction_indices=1)
-        self.lengths = tf.cast(length, tf.int32)
+        self.lengths = tf.cast(length, tf.int32)    # 记录序列除去padding的真实长度
         self.batch_size = tf.shape(self.char_inputs)[0]
         self.num_steps = tf.shape(self.char_inputs)[-1]
 
-        # embeddings for chinese character and segmentation representation
-        embedding = self.embedding_layer(self.char_inputs, self.seg_inputs, config)
-
-        # apply dropout before feed to lstm layer
-        lstm_inputs = tf.nn.dropout(embedding, self.dropout)
-
-        # bi-directional lstm layer
-        lstm_outputs = self.biLSTM_layer(lstm_inputs, self.lstm_dim, self.lengths)
-
-        # logits for tags
-        self.logits = self.project_layer(lstm_outputs)
-
-        # loss of the model
-        self.loss = self.loss_layer(self.logits, self.lengths)
-
+        embedding = self.embedding_layer(self.char_inputs, self.seg_inputs, config)  # 通过embedding_layer得到字词向量拼接后的特征向量
+        lstm_inputs = tf.nn.dropout(embedding, self.dropout)    # dropout层
+        lstm_outputs = self.biLSTM_layer(lstm_inputs, self.lstm_dim, self.lengths)  # 双向BiLSTM层
+        self.logits = self.project_layer(lstm_outputs)  # 进行预测，得到对每个字符是每个标签的概率
+        self.loss = self.loss_layer(self.logits, self.lengths)  # 计算loss
+        # 设置训练阶段的优化算法
         with tf.variable_scope("optimizer"):
             optimizer = self.config["optimizer"]
             if optimizer == "sgd":
@@ -76,15 +55,12 @@ class Model(object):
                 self.opt = tf.train.AdagradOptimizer(self.lr)
             else:
                 raise KeyError
-
-            # apply grad clip to avoid gradient explosion
+            # 设置梯度裁剪（grad clip）以避免梯度爆炸
             grads_vars = self.opt.compute_gradients(self.loss)
             capped_grads_vars = [[tf.clip_by_value(g, -self.config["clip"], self.config["clip"]), v]
                                  for g, v in grads_vars]
             self.train_op = self.opt.apply_gradients(capped_grads_vars, self.global_step)
-
-        # saver of the model
-        self.saver = tf.train.Saver(tf.global_variables(), max_to_keep=5)
+        self.saver = tf.train.Saver(tf.global_variables(), max_to_keep=5)   # 模型保存设置
 
     def embedding_layer(self, char_inputs, seg_inputs, config, name=None):
         """
