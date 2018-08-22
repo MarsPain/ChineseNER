@@ -28,15 +28,16 @@ def create_dico(item_list):
 
 def create_mapping(dico):
     """
-    Create a mapping (item to ID / ID to item) from a dictionary.
-    Items are ordered by decreasing frequency.
+    根据词频字典dico创建两种映射字典
+    :param dico:
+    :return:
     """
-    #根据字典dico创建两种映射字典
-    sorted_items = sorted(dico.items(), key=lambda x: (-x[1], x[0]))    #按照词频排序
+    # 根据字典dico创建两种映射字典
+    sorted_items = sorted(dico.items(), key=lambda x: (-x[1], x[0]))    # 按照词频对字典进行排序
     # for i, v in enumerate(sorted_items):
     #     print(i, v)
-    id_to_item = {i: v[0] for i, v in enumerate(sorted_items)}  #id（根据词频排序从0开始）到word
-    item_to_id = {v: k for k, v in id_to_item.items()}  #反转映射
+    id_to_item = {i: v[0] for i, v in enumerate(sorted_items)}  # id（根据词频排序从0开始）到word
+    item_to_id = {v: k for k, v in id_to_item.items()}  # 反转映射
     return item_to_id, id_to_item
 
 
@@ -130,9 +131,9 @@ def insert_singletons(words, singletons, p=0.5):
 
 def get_seg_features(string):
     """
-    Segment text with jieba
-    features are represented in bies format
-    s donates single word
+    序列的分割特征（或词特征），标注方法模仿boies
+    :param string:
+    :return:
     """
     seg_feature = []
     # print(string)
@@ -143,11 +144,11 @@ def get_seg_features(string):
     for word in jieba.cut(string):
         # print(word)
         if len(word) == 1:
-            seg_feature.append(0)
+            seg_feature.append(0)   # 单个字符标注为0
         else:
             tmp = [2] * len(word)
-            tmp[0] = 1
-            tmp[-1] = 3
+            tmp[0] = 1  # 词的中间字符标注为1
+            tmp[-1] = 3  # 词的末尾字符标注为3
             seg_feature.extend(tmp)
     return seg_feature
 
@@ -257,6 +258,11 @@ class BatchManager(object):
 
     @staticmethod
     def pad_data(data):
+        """
+        对序列进行padding补长处理，padding字符全设置为0
+        :param data:
+        :return:
+        """
         strings = []
         chars = []
         segs = []

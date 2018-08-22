@@ -22,24 +22,29 @@ class Model(object):
         self.num_tags = config["num_tags"]
         self.num_chars = config["num_chars"]
         self.num_segs = 4   # pass
-        # 设置训练变量
+        # 设置全局变量
         self.global_step = tf.Variable(0, trainable=False)
         self.best_dev_f1 = tf.Variable(0.0, trainable=False)
         self.best_test_f1 = tf.Variable(0.0, trainable=False)
         self.initializer = initializers.xavier_initializer()
-        # 设置占位符
-        self.char_inputs = tf.placeholder(dtype=tf.int32, shape=[None, None], name="ChatInputs")    # 字符特征
-        self.seg_inputs = tf.placeholder(dtype=tf.int32, shape=[None, None], name="SegInputs")  # 分割特征（词特征）
+        # 设置输入占位符
+        self.char_inputs = tf.placeholder(dtype=tf.int32, shape=[None, None], name="ChatInputs")    # 字符特征，由字符的索引id组成
+        self.seg_inputs = tf.placeholder(dtype=tf.int32, shape=[None, None], name="SegInputs")  # 分割特征，由每个字符的分割特征索引组成
         self.targets = tf.placeholder(dtype=tf.int32, shape=[None, None], name="Targets")   # 真实标签
         self.dropout = tf.placeholder(dtype=tf.float32, name="Dropout")
+        # 设置变量
+        self.char_lookup = tf.get_variable(name="char_embedding", shape=[self.num_chars, self.char_dim],
+                                           initializer=self.initializer)    # 词向量矩阵，初始化模型的时候，通过预训练词向量进行初始化
+        self.seg_lookup = tf.get_variable(name="seg_embedding", shape=[self.num_segs, self.seg_dim],
+                                          initializer=self.initializer)  # 分割特征向量矩阵，
 
-        used = tf.sign(tf.abs(self.char_inputs))
+        used = tf.sign(tf.abs(self.char_inputs))    # pass
         length = tf.reduce_sum(used, reduction_indices=1)
         self.lengths = tf.cast(length, tf.int32)    # 记录序列除去padding的真实长度
         self.batch_size = tf.shape(self.char_inputs)[0]
         self.num_steps = tf.shape(self.char_inputs)[-1]
 
-        embedding = self.embedding_layer(self.char_inputs, self.seg_inputs, config)  # 通过embedding_layer得到字词向量拼接后的特征向量
+        embedding = self.embedding_layer()  # 通过embedding_layer得到字词向量拼接后的特征向量
         lstm_inputs = tf.nn.dropout(embedding, self.dropout)    # dropout层
         lstm_outputs = self.biLSTM_layer(lstm_inputs, self.lstm_dim, self.lengths)  # 双向BiLSTM层
         self.logits = self.project_layer(lstm_outputs)  # 进行预测，得到对每个字符是每个标签的概率
@@ -62,32 +67,25 @@ class Model(object):
             self.train_op = self.opt.apply_gradients(capped_grads_vars, self.global_step)
         self.saver = tf.train.Saver(tf.global_variables(), max_to_keep=5)   # 模型保存设置
 
-    def embedding_layer(self, char_inputs, seg_inputs, config, name=None):
+    def embedding_layer(self):
         """
-        :param char_inputs: one-hot encoding of sentence
-        :param seg_inputs: segmentation feature
-        :param config: wither use segmentation feature
-        :return: [1, num_steps, embedding size], 
+        词嵌入层，将语句的词序列转换为词向量与分割特征序列转换为词向量
+        :return:[batch_size, num_steps, embedding size]
         """
-
         embedding = []
-        with tf.variable_scope("char_embedding" if not name else name):
-            print("num_chars", self.num_chars)
-            self.char_lookup = tf.get_variable(
-                    name="char_embedding",
-                    shape=[self.num_chars, self.char_dim],
-                    initializer=self.initializer)
-            embedding.append(tf.nn.embedding_lookup(self.char_lookup, char_inputs))
-            if config["seg_dim"]:
+        with tf.variable_scope("char_embedding"):
+            # print("num_chars", self.num_chars)
+            # self.char_lookup = tf.get_variable(name="char_embedding", shape=[self.num_chars, self.char_dim],
+            #                                    initializer=self.initializer)
+            embedding.append(tf.nn.embedding_lookup(self.char_lookup, self.char_inputs))
+            if self.config["seg_dim"]:
                 with tf.variable_scope("seg_embedding"):
-                    print("num_segs", self.seg_dim)
-                    self.seg_lookup = tf.get_variable(
-                        name="seg_embedding",
-                        shape=[self.num_segs, self.seg_dim],
-                        initializer=self.initializer)
-                    embedding.append(tf.nn.embedding_lookup(self.seg_lookup, seg_inputs))
+                    # print("num_segs", self.seg_dim)
+                    # self.seg_lookup = tf.get_variable(name="seg_embedding", shape=[self.num_segs, self.seg_dim],
+                    #                                   initializer=self.initializer)
+                    embedding.append(tf.nn.embedding_lookup(self.seg_lookup, self.seg_inputs))
             embed = tf.concat(embedding, axis=-1)
-            print(embed.shape)
+            # print(embed.shape)
         return embed
 
     def biLSTM_layer(self, lstm_inputs, lstm_dim, lengths, name=None):

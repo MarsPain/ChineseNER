@@ -86,13 +86,15 @@ def char_mapping(sentences, lower):
     chars = [[x[0].lower() if lower else x[0] for x in s] for s in sentences]
     # 用creat创建字典
     dico = create_dico(chars)   # 创建字典，键值对为word-词频frequency
+    # padding字符<PAD>的频数，极大化这一数值，保证最终得到的映射字典中<PAD>的索引为0，因为对序列进行补长的时候，补充的是0
     dico["<PAD>"] = 10000001
-    dico['<UNK>'] = 10000000
+    dico['<UNK>'] = 10000000    # unknown字符的索引
     # 根据字典得到两种映射
     char_to_id, id_to_char = create_mapping(dico)
     print("Found %i unique words (%i in total)" % (
         len(dico), sum(len(x) for x in chars)
     ))
+    # print("char_to_id:", char_to_id)
     return dico, char_to_id, id_to_char
 
 
@@ -136,6 +138,7 @@ def prepare_dataset(sentences, char_to_id, tag_to_id, lower=False, train=True):
             # print("tags", tags)
         else:
             tags = [none_index for _ in chars]
+        # print("chars:", chars)
         data.append([string, chars, segs, tags])
     # print(segs)
     return data

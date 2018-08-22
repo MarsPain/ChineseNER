@@ -16,11 +16,11 @@ from data_utils import create_input, input_from_line, BatchManager
 
 flags = tf.flags
 # 若要训练则将clean和train设置为True
-# flags.DEFINE_boolean("clean",       True,      "clean train folder")
-# flags.DEFINE_boolean("train",       True,      "Wither train the model")
+flags.DEFINE_boolean("clean",       True,      "clean train folder")
+flags.DEFINE_boolean("train",       True,      "Wither train the model")
 # 若要进行预测则将clean和train均设置为False
-flags.DEFINE_boolean("clean",       False,      "clean train folder")
-flags.DEFINE_boolean("train",       False,      "Wither train the model")
+# flags.DEFINE_boolean("clean",       False,      "clean train folder")
+# flags.DEFINE_boolean("train",       False,      "Wither train the model")
 # 模型参数
 # seg_dim为分割特征的维度，分割特征即为词向量，对应的char_dim为词向量的维度，分别对应于英语文本中的词向量和字符向量
 flags.DEFINE_integer("seg_dim",     20,         "Embedding size for segmentation, 0 if not used")
