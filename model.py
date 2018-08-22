@@ -16,12 +16,12 @@ class Model(object):
         # 从参数列表中获取模型参数
         self.config = config
         self.lr = config["lr"]
-        self.char_dim = config["char_dim"]
-        self.lstm_dim = config["lstm_dim"]
-        self.seg_dim = config["seg_dim"]
-        self.num_tags = config["num_tags"]
-        self.num_chars = config["num_chars"]
-        self.num_segs = 4   # pass
+        self.char_dim = config["char_dim"]  # 字符的词向量维度
+        self.lstm_dim = config["lstm_dim"]  # lstm隐层神经元数量
+        self.seg_dim = config["seg_dim"]    # 字符的分割特征维度
+        self.num_tags = config["num_tags"]  # 标签数量
+        self.num_chars = config["num_chars"]    # 字符数量
+        self.num_segs = 4   # 分割特征的数量
         # 设置全局变量
         self.global_step = tf.Variable(0, trainable=False)
         self.best_dev_f1 = tf.Variable(0.0, trainable=False)
@@ -36,19 +36,22 @@ class Model(object):
         self.char_lookup = tf.get_variable(name="char_embedding", shape=[self.num_chars, self.char_dim],
                                            initializer=self.initializer)    # 词向量矩阵，初始化模型的时候，通过预训练词向量进行初始化
         self.seg_lookup = tf.get_variable(name="seg_embedding", shape=[self.num_segs, self.seg_dim],
-                                          initializer=self.initializer)  # 分割特征向量矩阵，
+                                          initializer=self.initializer)  # 分割特征向量矩阵
+        self.trans = tf.get_variable("transitions", shape=[self.num_tags + 1, self.num_tags + 1],
+                                     initializer=self.initializer)  # 状态转移矩阵，在loss层中进行计算
 
-        used = tf.sign(tf.abs(self.char_inputs))    # pass
+        used = tf.sign(tf.abs(self.char_inputs))    # 计算序列中索引非0字符的数量
         length = tf.reduce_sum(used, reduction_indices=1)
-        self.lengths = tf.cast(length, tf.int32)    # 记录序列除去padding的真实长度
+        self.lengths = tf.cast(length, tf.int32)    # 记录序列除去padding（索引为0）的真实长度
         self.batch_size = tf.shape(self.char_inputs)[0]
-        self.num_steps = tf.shape(self.char_inputs)[-1]
+        self.num_steps = tf.shape(self.char_inputs)[-1]  # 序列总长度
 
+        # 构造tensor的传递
         embedding = self.embedding_layer()  # 通过embedding_layer得到字词向量拼接后的特征向量
         lstm_inputs = tf.nn.dropout(embedding, self.dropout)    # dropout层
-        lstm_outputs = self.biLSTM_layer(lstm_inputs, self.lstm_dim, self.lengths)  # 双向BiLSTM层
+        lstm_outputs = self.bilstm_layer(lstm_inputs)  # 双向BiLSTM层
         self.logits = self.project_layer(lstm_outputs)  # 进行预测，得到对每个字符是每个标签的概率
-        self.loss = self.loss_layer(self.logits, self.lengths)  # 计算loss
+        self.loss = self.loss_layer(self.logits)  # 计算loss
         # 设置训练阶段的优化算法
         with tf.variable_scope("optimizer"):
             optimizer = self.config["optimizer"]
@@ -88,87 +91,75 @@ class Model(object):
             # print(embed.shape)
         return embed
 
-    def biLSTM_layer(self, lstm_inputs, lstm_dim, lengths, name=None):
+    def bilstm_layer(self, lstm_inputs):
         """
+        BiLSTM层
         :param lstm_inputs: [batch_size, num_steps, emb_size] 
         :return: [batch_size, num_steps, 2*lstm_dim] 
         """
-        with tf.variable_scope("char_BiLSTM" if not name else name):
+        with tf.variable_scope("char_BiLSTM"):
             lstm_cell = {}
             for direction in ["forward", "backward"]:
                 with tf.variable_scope(direction):
                     lstm_cell[direction] = rnn.CoupledInputForgetGateLSTMCell(
-                        lstm_dim,   #每个LSTM cell内部的神经元数量（即隐层参数维度）
-                        use_peepholes=True,
-                        initializer=self.initializer,
-                        state_is_tuple=True)
+                        self.lstm_dim,   # 每个LSTM cell内部的神经元数量（即隐层参数维度）
+                        use_peepholes=True, initializer=self.initializer, state_is_tuple=True)
             outputs, final_states = tf.nn.bidirectional_dynamic_rnn(
-                lstm_cell["forward"],   #前向传播cell的一个实例
-                lstm_cell["backward"],  #后向传播cell的一个实例
+                lstm_cell["forward"],   # 前向传播cell
+                lstm_cell["backward"],  # 后向传播cell
                 lstm_inputs,
                 dtype=tf.float32,
-                sequence_length=lengths)
+                sequence_length=self.lengths)
         return tf.concat(outputs, axis=2)
 
-    def project_layer(self, lstm_outputs, name=None):
+    def project_layer(self, lstm_outputs):
         """
-        hidden layer between lstm layer and logits
+        根据lstm的输出对序列中每个字符进行预测，得到每个字符是每个标签的概率
         :param lstm_outputs: [batch_size, num_steps, emb_size] 
         :return: [batch_size, num_steps, num_tags]
         """
-        with tf.variable_scope("project" if not name else name):
+        with tf.variable_scope("project"):
+            # 隐层的计算
             with tf.variable_scope("hidden"):
-                W = tf.get_variable("W", shape=[self.lstm_dim*2, self.lstm_dim],
+                w = tf.get_variable("W", shape=[self.lstm_dim*2, self.lstm_dim],
                                     dtype=tf.float32, initializer=self.initializer)
 
                 b = tf.get_variable("b", shape=[self.lstm_dim], dtype=tf.float32,
                                     initializer=tf.zeros_initializer())
                 output = tf.reshape(lstm_outputs, shape=[-1, self.lstm_dim*2])
-                hidden = tf.tanh(tf.nn.xw_plus_b(output, W, b))
-
-            # project to score of tags
+                hidden = tf.tanh(tf.nn.xw_plus_b(output, w, b))
+            # 得到标签概率
             with tf.variable_scope("logits"):
-                W = tf.get_variable("W", shape=[self.lstm_dim, self.num_tags],
+                w = tf.get_variable("W", shape=[self.lstm_dim, self.num_tags],
                                     dtype=tf.float32, initializer=self.initializer)
 
                 b = tf.get_variable("b", shape=[self.num_tags], dtype=tf.float32,
                                     initializer=tf.zeros_initializer())
 
-                pred = tf.nn.xw_plus_b(hidden, W, b)
+                pred = tf.nn.xw_plus_b(hidden, w, b)
 
             return tf.reshape(pred, [-1, self.num_steps, self.num_tags])
 
-    def loss_layer(self, project_logits, lengths, name=None):
+    def loss_layer(self, project_logits):
         """
-        calculate crf loss
+        通过CRF层计算loss
         :param project_logits: [1, num_steps, num_tags]
         :return: scalar loss
         """
-        with tf.variable_scope("crf_loss"  if not name else name):
+        with tf.variable_scope("crf_loss"):
             small = -1000.0
-            # pad logits for crf loss
-            start_logits = tf.concat(
-                [small * tf.ones(shape=[self.batch_size, 1, self.num_tags]), tf.zeros(shape=[self.batch_size, 1, 1])], axis=-1)
+            # 设置计算首个字符的概率，用于在CRF中计算真实首个字符的转移概率
+            start_logits = tf.concat([small * tf.ones(shape=[self.batch_size, 1, self.num_tags]),
+                                      tf.zeros(shape=[self.batch_size, 1, 1])], axis=-1)
             pad_logits = tf.cast(small * tf.ones([self.batch_size, self.num_steps, 1]), tf.float32)
-            print("project_logits", project_logits)
-            print("pad_logits", pad_logits)
             logits = tf.concat([project_logits, pad_logits], axis=-1)
-            print("logits", logits)
             logits = tf.concat([start_logits, logits], axis=1)
-            print("logits", logits)
             targets = tf.concat(
                 [tf.cast(self.num_tags*tf.ones([self.batch_size, 1]), tf.int32), self.targets], axis=-1)
             print("targets:", targets)
-
-            self.trans = tf.get_variable(
-                "transitions",
-                shape=[self.num_tags + 1, self.num_tags + 1],
-                initializer=self.initializer)
-            log_likelihood, self.trans = crf_log_likelihood(
-                inputs=logits,
-                tag_indices=targets,
-                transition_params=self.trans,
-                sequence_lengths=lengths+1)
+            log_likelihood, self.trans = crf_log_likelihood(inputs=logits, tag_indices=targets,
+                                                            transition_params=self.trans,
+                                                            sequence_lengths=self.lengths+1)
             return tf.reduce_mean(-log_likelihood)
 
     def create_feed_dict(self, is_train, batch):
