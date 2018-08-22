@@ -164,8 +164,9 @@ class Model(object):
 
     def create_feed_dict(self, is_train, batch):
         """
-        :param is_train: Flag, True for train batch
-        :param batch: list train/evaluate data 
+        创建feed_dict
+        :param is_train: Flag, True for train batch, False for dev batch and test batch
+        :param batch: batch列表，主要包括string, chars, segs, tags
         :return: structured data to feed
         """
         _, chars, segs, tags = batch
@@ -176,51 +177,48 @@ class Model(object):
         }
         if is_train:
             feed_dict[self.targets] = np.asarray(tags)
-            # print("tags", np.asarray(tags).shape)
-            # print("self.targets", self.targets)
             feed_dict[self.dropout] = self.config["dropout_keep"]
         return feed_dict
 
     def run_step(self, sess, is_train, batch):
         """
-        :param sess: session to run the batch
-        :param is_train: a flag indicate if it is a train batch
-        :param batch: a dict containing batch data
+        # 运行sess
+        :param sess: session
+        :param is_train: 指定是训练还是验证的flag
+        :param batch:
         :return: batch result, loss of the batch or logits
         """
         feed_dict = self.create_feed_dict(is_train, batch)
         if is_train:
-            global_step, loss, _ = sess.run(
-                [self.global_step, self.loss, self.train_op],
-                feed_dict)
+            global_step, loss, _ = sess.run([self.global_step, self.loss, self.train_op], feed_dict)
             return global_step, loss
         else:
             lengths, logits = sess.run([self.lengths, self.logits], feed_dict)
             return lengths, logits
 
-    def decode(self, logits, lengths, matrix):
+    def decode(self, logits, lengths):
         """
-        :param logits: [batch_size, num_steps, num_tags]float32, logits
-        :param lengths: [batch_size]int32, real length of each sequence
-        :param matrix: transaction matrix for inference
+        通过project_layer层得到的每个字符的标签概率和通过loss层得到的标签转移概率矩阵后，
+        利用维特比算法对序列标签进行预测
+        :param logits: 对序列中字符标签的预测[batch_size, num_steps, num_tags]
+        :param lengths: 每个序列除去padding字符的真实长度[batch_size]
         :return:
         """
-        # inference final labels us a viterbi Algorithm
         paths = []
         small = -1000.0
-        start = np.asarray([[small]*self.num_tags +[0]])
+        start = np.asarray([[small]*self.num_tags + [0]])   # start是pad的概率为最大
         for score, length in zip(logits, lengths):
             score = score[:length]
-            pad = small * np.ones([length, 1])  #pad和small都是用于处理mask的
-            logits = np.concatenate([score, pad], axis=1)
-            logits = np.concatenate([start, logits], axis=0)
-            path, _ = viterbi_decode(logits, matrix)
-
+            pad = small * np.ones([length, 1])  # 极小化预测出pad的概率
+            logits = np.concatenate([score, pad], axis=1)   # 添加每个字符是pad的概率
+            logits = np.concatenate([start, logits], axis=0)    # 将start的概率添加到序列前面
+            path, _ = viterbi_decode(logits, self.trans)
             paths.append(path[1:])
         return paths
 
     def evaluate(self, sess, data_manager, id_to_tag):
         """
+
         :param sess: session  to run the model 
         :param data_manager: list of data
         :param id_to_tag: index to tag name
