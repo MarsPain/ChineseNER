@@ -1,9 +1,6 @@
-# encoding = utf8
 import re
 import math
-import codecs
 import random
-
 import numpy as np
 import jieba
 jieba.initialize()
@@ -43,15 +40,18 @@ def create_mapping(dico):
 
 def zero_digits(s):
     """
-    Replace every digit in a string by a zero.
+    将所有数字替换成0
+    :param s:
+    :return:
     """
     return re.sub('\d', '0', s)
 
 
 def iob2(tags):
     """
-    Check that tags have a valid IOB format.
-    Tags in IOB1 format are converted to IOB2.
+    检测标注模式，并将IOB1转换为IOB2
+    :param tags:
+    :return:
     """
     for i, tag in enumerate(tags):
         if tag == 'O':
@@ -72,7 +72,9 @@ def iob2(tags):
 
 def iob_iobes(tags):
     """
-    IOB -> IOBES
+    将IOB标注模式改为IOBES
+    :param tags:
+    :return:
     """
     new_tags = []
     for i, tag in enumerate(tags):
@@ -97,7 +99,9 @@ def iob_iobes(tags):
 
 def iobes_iob(tags):
     """
-    IOBES -> IOB
+    将IOBES标注模式转换为IOB
+    :param tags:
+    :return:
     """
     new_tags = []
     for i, tag in enumerate(tags):
@@ -117,9 +121,6 @@ def iobes_iob(tags):
 
 
 def insert_singletons(words, singletons, p=0.5):
-    """
-    Replace singletons by the unknown word with a probability p.
-    """
     new_words = []
     for word in words:
         if word in singletons and np.random.uniform() < p:
@@ -154,20 +155,14 @@ def get_seg_features(string):
 
 
 def create_input(data):
-    """
-    Take sentence data and return an input for
-    the training or the evaluation function.
-    """
     inputs = list()
     inputs.append(data['chars'])
     inputs.append(data["segs"])
     inputs.append(data['tags'])
     return inputs
 
+
 def full_to_half(s):
-    """
-    Convert full-width character to half-width one 
-    """
     n = []
     for char in s:
         num = ord(char)
@@ -181,9 +176,6 @@ def full_to_half(s):
 
 
 def cut_to_sentence(text):
-    """
-    Cut text to sentences 
-    """
     sentence = []
     sentences = []
     len_p = len(text)
@@ -192,14 +184,14 @@ def cut_to_sentence(text):
         sentence.append(word)
         cut = False
         if pre_cut:
-            cut=True
-            pre_cut=False
+            cut = True
+            pre_cut = False
         if word in u"。;!?\n":
             cut = True
             if len_p > idx+1:
                 if text[idx+1] in ".。”\"\'“”‘’?!":
                     cut = False
-                    pre_cut=True
+                    pre_cut = True
 
         if cut:
             sentences.append(sentence)
@@ -210,22 +202,24 @@ def cut_to_sentence(text):
 
 
 def replace_html(s):
-    s = s.replace('&quot;','"')
-    s = s.replace('&amp;','&')
-    s = s.replace('&lt;','<')
-    s = s.replace('&gt;','>')
-    s = s.replace('&nbsp;',' ')
+    s = s.replace('&quot;', '"')
+    s = s.replace('&amp;', '&')
+    s = s.replace('&lt;', '<')
+    s = s.replace('&gt;', '>')
+    s = s.replace('&nbsp;', ' ')
     s = s.replace("&ldquo;", "“")
     s = s.replace("&rdquo;", "”")
-    s = s.replace("&mdash;","")
+    s = s.replace("&mdash;", "")
     s = s.replace("\xa0", " ")
-    return(s)
+    return s
 
 
 def input_from_line(line, char_to_id):
     """
-    Take sentence data and return an input for
-    the training or the evaluation function.
+    将一个语句处理成可预测的数据格式
+    :param line: 一个语句sentence
+    :param char_to_id:
+    :return:
     """
     line = full_to_half(line)
     line = replace_html(line)

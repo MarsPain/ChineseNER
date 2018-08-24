@@ -202,6 +202,7 @@ class Model(object):
         利用维特比算法对序列标签进行预测
         :param logits: 对序列中字符标签的预测[batch_size, num_steps, num_tags]
         :param lengths: 每个序列除去padding字符的真实长度[batch_size]
+        :param trans: 状态转移概率矩阵
         :return:
         """
         paths = []

@@ -1,7 +1,6 @@
 # Python version of the evaluation script from CoNLL'00-
 # Originates from: https://github.com/spyysalo/conlleval.py
 
-
 # Intentional differences:
 # - accept any space as delimiter by default
 # - optional file argument (default STDIN)
@@ -13,13 +12,11 @@ import sys
 import re
 import codecs
 from collections import defaultdict, namedtuple
-
 ANY_SPACE = '<SPACE>'
 
 
 class FormatError(Exception):
     pass
-
 Metrics = namedtuple('Metrics', 'tp fp fn prec rec fscore')
 
 
@@ -107,12 +104,11 @@ def evaluate(iterable, options=None):
                                        last_guessed_type, guessed_type)
 
         if in_correct:
-            if (end_correct and end_guessed and
-                last_guessed_type == last_correct_type):
+            if end_correct and end_guessed and last_guessed_type == last_correct_type:
                 in_correct = False
                 counts.correct_chunk += 1
                 counts.t_correct_chunk[last_correct_type] += 1
-            elif (end_correct != end_guessed or guessed_type != correct_type):
+            elif end_correct != end_guessed or guessed_type != correct_type:
                 in_correct = False
 
         if start_correct and start_guessed and guessed_type == correct_type:
@@ -137,13 +133,12 @@ def evaluate(iterable, options=None):
     if in_correct:
         counts.correct_chunk += 1
         counts.t_correct_chunk[last_correct_type] += 1
-
     return counts
 
 
 def uniq(iterable):
-  seen = set()
-  return [i for i in iterable if not (i in seen or seen.add(i))]
+    seen = set()
+    return [i for i in iterable if not (i in seen or seen.add(i))]
 
 
 def calculate_metrics(correct, guessed, total):

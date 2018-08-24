@@ -1,6 +1,4 @@
 import os
-# encoding=utf8
-import codecs
 import pickle
 import itertools
 from collections import OrderedDict
@@ -12,7 +10,7 @@ from loader import char_mapping, tag_mapping
 from loader import augment_with_pretrained, prepare_dataset
 from utils import get_logger, make_path, clean, create_model, save_model
 from utils import print_config, save_config, load_config, result_write_evaluate
-from data_utils import create_input, input_from_line, BatchManager
+from data_utils import input_from_line, BatchManager
 
 flags = tf.flags
 # 若要训练则将clean和train设置为True
@@ -198,7 +196,6 @@ class Main:
         self.get_sentences_dict()
         self.get_batch_data()
         logger, config = self.get_config()
-
         tf_config = tf.ConfigProto()
         tf_config.gpu_options.allow_growth = True  # limit GPU memory
         steps_per_epoch = self.train_batch_manager.len_data  # 每一轮epoch的batch数量

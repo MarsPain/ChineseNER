@@ -50,24 +50,23 @@ def load_sentences(path, lower, zeros):
 
 def update_tag_scheme(sentences, tag_scheme):
     """
-    Check and update sentences tagging scheme to IOB2.
-    Only IOB1 and IOB2 schemes are accepted.
+    对标注模式进行检查和转换
+    :param sentences:
+    :param tag_scheme:
+    :return:
     """
     for i, s in enumerate(sentences):
         tags = [w[-1] for w in s]
-        #对IOB标注模式的数据进行处理
-        # Check that tags are given in the IOB format
-        # 确定原数据的标注模式是IOB格式
+        # 对IOB标注模式的数据进行处理，确定原数据的标注模式是IOB2格式
         if not iob2(tags):
             s_str = '\n'.join(' '.join(w) for w in s)
             raise Exception('Sentences should be given in IOB format! ' +
                             'Please check sentence %i:\n%s' % (i, s_str))
-        #若依然按照IOB格式进行处理
         if tag_scheme == 'iob':
             # If format was IOB1, we convert to IOB2
             for word, new_tag in zip(s, tags):
                 word[-1] = new_tag
-        #若要转换成IOBES格式
+        # 若要转换成IOBES格式
         elif tag_scheme == 'iobes':
             new_tags = iob_iobes(tags)
             for word, new_tag in zip(s, new_tags):
@@ -176,22 +175,3 @@ def augment_with_pretrained(dictionary, ext_emb_path, chars):
                 dictionary[char] = 0
     word_to_id, id_to_word = create_mapping(dictionary)  # 根据词频字典得到word-id的双向映射字典
     return dictionary, word_to_id, id_to_word
-
-
-def save_maps(save_path, *params):
-    """
-    Save mappings and invert mappings
-    """
-    pass
-    # with codecs.open(save_path, "w", encoding="utf8") as f:
-    #     pickle.dump(params, f)
-
-
-def load_maps(save_path):
-    """
-    Load mappings from the file
-    """
-    pass
-    # with codecs.open(save_path, "r", encoding="utf8") as f:
-    #     pickle.load(save_path, f)
-

@@ -8,13 +8,12 @@ import re
 import tensorflow as tf
 from conlleval import return_report
 
-models_path = "./models"
-eval_path = "./evaluation"
-eval_temp = os.path.join(eval_path, "temp")
-eval_script = os.path.join(eval_path, "conlleval")
-
 
 def get_logger(log_file):
+    """
+    初始化logger
+    :param log_file:
+    """
     logger = logging.getLogger(log_file)
     logger.setLevel(logging.DEBUG)
     fh = logging.FileHandler(log_file)
@@ -29,34 +28,12 @@ def get_logger(log_file):
     return logger
 
 
-# def test_ner(results, path):
-#     """
-#     Run perl script to evaluate model
-#     """
-#     script_file = "conlleval"
-#     output_file = os.path.join(path, "ner_predict.utf8")
-#     result_file = os.path.join(path, "ner_result.utf8")
-#     with open(output_file, "w") as f:
-#         to_write = []
-#         for block in results:
-#             for line in block:
-#                 to_write.append(line + "\n")
-#             to_write.append("\n")
-#
-#         f.writelines(to_write)
-#     os.system("perl {} < {} > {}".format(script_file, output_file, result_file))
-#     eval_lines = []
-#     with open(result_file) as f:
-#         for line in f:
-#             eval_lines.append(line.strip())
-#     return eval_lines
-
-
 def result_write_evaluate(results, path, name):
     """
     将对验证集的预测识别结果写入到原数据中并进行输出，然后计算识别的性能；将对测试集的预测识别结果写入到原数据中并进行输出
     :param results:
     :param path:
+    :param name:
     :return:
     """
     if name == "dev":
@@ -82,17 +59,11 @@ def result_write_evaluate(results, path, name):
 
 
 def print_config(config, logger):
-    """
-    Print configuration of the model
-    """
     for k, v in config.items():
         logger.info("{}:\t{}".format(k.ljust(15), v))
 
 
 def make_path(params):
-    """
-    Make folders for training and evaluation
-    """
     if not os.path.isdir(params.result_path):
         os.makedirs(params.result_path)
     if not os.path.isdir(params.ckpt_path):
@@ -102,63 +73,39 @@ def make_path(params):
 
 
 def clean(params):
-    """
-    Clean current folder
-    remove saved model and training log
-    """
     if os.path.isfile(params.vocab_file):
         os.remove(params.vocab_file)
-
     if os.path.isfile(params.map_file):
         os.remove(params.map_file)
-
     if os.path.isdir(params.ckpt_path):
         shutil.rmtree(params.ckpt_path)
-
     if os.path.isdir(params.summary_path):
         shutil.rmtree(params.summary_path)
-
     if os.path.isdir(params.result_path):
         shutil.rmtree(params.result_path)
-
     if os.path.isdir("log"):
         shutil.rmtree("log")
-
     if os.path.isdir("__pycache__"):
         shutil.rmtree("__pycache__")
-
     if os.path.isfile(params.config_file):
         os.remove(params.config_file)
-
     if os.path.isfile(params.vocab_file):
         os.remove(params.vocab_file)
 
 
 def save_config(config, config_file):
-    """
-    Save configuration of the model
-    parameters are stored in json format
-    """
     with open(config_file, "w", encoding="utf8") as f:
         json.dump(config, f, ensure_ascii=False, indent=4)
 
 
 def load_config(config_file):
-    """
-    Load configuration of the model
-    parameters are stored in json format
-    """
     with open(config_file, encoding="utf8") as f:
         return json.load(f)
 
 
 def convert_to_text(line):
-    """
-    Convert conll data to text
-    """
     to_print = []
     for item in line:
-
         try:
             if item[0] == " ":
                 to_print.append(" ")
@@ -258,13 +205,19 @@ def load_word2vec(emb_path, id_to_word, word_dim, old_weights):
 
 
 def result_to_json(string, tags):
+    """
+    将对一个语句的实体识别结果整理成规范化数据并返回
+    :param string:
+    :param tags:
+    :return:
+    """
     item = {"string": string, "entities": []}
     entity_name = ""
     entity_start = 0
     idx = 0
     for char, tag in zip(string, tags):
         if tag[0] == "S":
-            item["entities"].append({"word": char, "start": idx, "end": idx+1, "type":tag[2:]})
+            item["entities"].append({"word": char, "start": idx, "end": idx+1, "type": tag[2:]})
         elif tag[0] == "B":
             entity_name += char
             entity_start = idx
@@ -279,7 +232,3 @@ def result_to_json(string, tags):
             entity_start = idx
         idx += 1
     return item
-
-
-
-
