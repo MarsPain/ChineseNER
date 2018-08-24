@@ -16,11 +16,12 @@ from data_utils import create_input, input_from_line, BatchManager
 
 flags = tf.flags
 # 若要训练则将clean和train设置为True
-flags.DEFINE_boolean("clean",       True,      "clean train folder")
-flags.DEFINE_boolean("train",       True,      "Wither train the model")
+# flags.DEFINE_boolean("clean",       True,      "clean train folder")
+# flags.DEFINE_boolean("train",       True,      "Wither train the model")
 # 若要进行预测则将clean和train均设置为False
-# flags.DEFINE_boolean("clean",       False,      "clean train folder")
-# flags.DEFINE_boolean("train",       False,      "Wither train the model")
+flags.DEFINE_boolean("clean",       False,      "clean train folder")
+flags.DEFINE_boolean("train",       False,      "Wither train the model")
+flags.DEFINE_boolean("predict_line", False, "predict one line data or all dataset")
 # 模型参数
 # seg_dim为分割特征的维度，分割特征即为词向量，对应的char_dim为词向量的维度，分别对应于英语文本中的词向量和字符向量
 flags.DEFINE_integer("seg_dim",     20,         "Embedding size for segmentation, 0 if not used")
@@ -48,7 +49,6 @@ flags.DEFINE_string("config_file",  "config_file",  "File for config")
 flags.DEFINE_string("script",       "conlleval",    "evaluation script")
 flags.DEFINE_string("result_path",  "result",       "Path for results")
 flags.DEFINE_string("emb_file",     "wiki_100.utf8", "Path for pre_trained embedding")
-flags.DEFINE_boolean("predict_line", False, "predict one line data or all dataset")
 # 原示例数据集
 # flags.DEFINE_string("train_file",   os.path.join("data", "example.train"),  "Path for train data")
 # flags.DEFINE_string("dev_file",     os.path.join("data", "example.dev"),    "Path for dev data")
@@ -110,10 +110,11 @@ class Main:
         config["lower"] = FLAGS.lower
         return config
 
-    def evaluate(self, sess, model, name, data, id_to_tag, logger):
+    @staticmethod
+    def evaluate(sess, model, name, data, id_to_tag, logger):
         if name == "dev":
             logger.info("evaluate dev data......")
-            ner_results = model.evaluate(sess, data, id_to_tag)  # 对验证集进行预测，得到对各个实体的预测
+            ner_results = model.predict(sess, data, id_to_tag)  # 对验证集进行预测，得到对各个实体的预测
             # 将预测结果写入到原数据并输出，然后计算并评估识别性能
             eval_lines = result_write_evaluate(ner_results, FLAGS.result_path, name)
             for line in eval_lines:
@@ -124,10 +125,6 @@ class Main:
                 tf.assign(model.best_dev_f1, f1).eval()
                 logger.info("new best dev f1 score:{:>.3f}".format(f1))
             return f1 > best_test_f1
-        elif name == "test":    # 对测试集仅进行预测
-            logger.info("predict data......")
-            ner_results = model.evaluate(sess, data, id_to_tag)
-            result_write_evaluate(ner_results, FLAGS.result_path, name)
 
     def get_sentences_dict(self):
         """
@@ -218,11 +215,17 @@ class Main:
                         logger.info("iteration:{} step:{}/{}, ""NER loss:{:>9.6f}".format(
                             iteration, step % steps_per_epoch, steps_per_epoch, np.mean(loss)))
                         loss = []
+                # 对验证集进行预测和评估
                 best = self.evaluate(sess, model, "dev", self.dev_batch_manager, self.id_to_tag, logger)
                 if best:
                     save_model(sess, model, FLAGS.ckpt_path, logger)
 
-    def predict(self):
+    @ staticmethod
+    def predict():
+        """
+        对一个数据集进行实体识别
+        :return:
+        """
         config = load_config(FLAGS.config_file)
         logger = get_logger(FLAGS.log_file)
         tf_config = tf.ConfigProto()
@@ -235,10 +238,16 @@ class Main:
         test_manager = BatchManager(test_data, 1)
         with tf.Session(config=tf_config) as sess:
             model = create_model(sess, Model, FLAGS.ckpt_path, config, id_to_char, logger)
-            self.evaluate(sess, model, "test", test_manager, id_to_tag, logger)  # 对整个数据集进行预测
+            logger.info("predict data......")
+            ner_results = model.predict(sess, test_manager, id_to_tag)
+            result_write_evaluate(ner_results, FLAGS.result_path, "test")
 
     @staticmethod
     def predict_line():
+        """
+        对一个语句实例进行实体识别测试
+        :return:
+        """
         config = load_config(FLAGS.config_file)
         logger = get_logger(FLAGS.log_file)
         tf_config = tf.ConfigProto()
@@ -250,7 +259,7 @@ class Main:
             # 对单个句子进行预测
             while True:
                 line = input("请输入测试句子:")
-                result = model.evaluate_line(sess, input_from_line(line, char_to_id), id_to_tag)
+                result = model.predict_line(sess, input_from_line(line, char_to_id), id_to_tag)
                 print(result)
 
 if __name__ == "__main__":

@@ -196,7 +196,7 @@ class Model(object):
             lengths, logits = sess.run([self.lengths, self.logits], feed_dict)
             return lengths, logits
 
-    def decode(self, logits, lengths):
+    def decode(self, logits, lengths, trans):
         """
         通过project_layer层得到的每个字符的标签概率和通过loss层得到的标签转移概率矩阵后，
         利用维特比算法对序列标签进行预测
@@ -212,26 +212,26 @@ class Model(object):
             pad = small * np.ones([length, 1])  # 极小化预测出pad的概率
             logits = np.concatenate([score, pad], axis=1)   # 添加每个字符是pad的概率
             logits = np.concatenate([start, logits], axis=0)    # 将start的概率添加到序列前面
-            path, _ = viterbi_decode(logits, self.trans)
+            path, _ = viterbi_decode(logits, trans)
             paths.append(path[1:])
         return paths
 
-    def evaluate(self, sess, data_manager, id_to_tag):
+    def predict(self, sess, data_manager, id_to_tag):
         """
-
-        :param sess: session  to run the model 
-        :param data_manager: list of data
-        :param id_to_tag: index to tag name
-        :return: evaluate result
+        对一个数据集进行预测
+        :param sess:
+        :param data_manager:batch管理类
+        :param id_to_tag:
+        :return:results:预测结果列表
         """
         results = []
-        trans = self.trans.eval()
+        trans = self.trans.eval()  # tensor.eval()作用类似于sess.run()，目的在于运行图获取tensor
         for batch in data_manager.iter_batch():
             # batch = [sentences, chars(word的id), segs(分割特征), tags]
-            strings = batch[0]  # 原sentence内容
-            tags = batch[-1]    # 原tags
-            lengths, scores = self.run_step(sess, False, batch)
-            batch_paths = self.decode(scores, lengths, trans)
+            strings = batch[0]  # 原语句的字符列表
+            tags = batch[-1]    # 原语句的tags列表
+            lengths, logits = self.run_step(sess, False, batch)  # 运行sess进行预测，获取对每个字符的预测
+            batch_paths = self.decode(logits, lengths, trans)   # 利用维特比算法基于状态概率和状态转移概率进行解码
             # print("batch_paths", batch_paths)
             for i in range(len(strings)):
                 result = []
@@ -245,9 +245,16 @@ class Model(object):
         # print("results", results)
         return results
 
-    def evaluate_line(self, sess, inputs, id_to_tag):
+    def predict_line(self, sess, sentence, id_to_tag):
+        """
+        一个语句实例进行实体识别测试
+        :param sess:
+        :param sentence:
+        :param id_to_tag:
+        :return:
+        """
         trans = self.trans.eval()
-        lengths, scores = self.run_step(sess, False, inputs)
-        batch_paths = self.decode(scores, lengths, trans)
+        lengths, logits = self.run_step(sess, False, sentence)
+        batch_paths = self.decode(logits, lengths, trans)
         tags = [id_to_tag[idx] for idx in batch_paths[0]]
-        return result_to_json(inputs[0][0], tags)
+        return result_to_json(sentence[0][0], tags)
