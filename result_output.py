@@ -2,10 +2,10 @@ import os
 import pandas as pd
 
 path_data_all = "data/data_all_fangji.csv"  # 原方剂数据集
-path_ner_result = "result/ner_predict_test.utf8"    # 命名实体识别结果
-path_result = "result/result.csv"   # 存储被识别出来的实体的标准表示
+path_ner_result = "result/ner_predict_dev.utf8"    # 命名实体识别结果
+path_ner_entity = "result/ner_entity.csv"   # 存储被识别出来的实体的标准表示
 path_data_all_ner = "result/data_all_ner.csv"   # 将命名实体识别结果写到原方剂数据集中
-path_new_true_entity = "result/new_true_entity.csv"  # 存储测试集中被识别出的新实体、测试集真实的实体、新实体中正确的实体
+path_new_true_entity = "result/new_true_entity.csv"  # 存储从测试集中识别出的正确的新实体
 
 
 def get_data():
@@ -67,7 +67,7 @@ def get_data():
     # print("entity_all_list:", entity_all_list)
     entity_all_series = pd.concat(entity_all_list, axis=1)
     # print("entity_all_series:", entity_all_series)
-    entity_all_series.to_csv(path_result, index=False, encoding="utf-8")
+    entity_all_series.to_csv(path_ner_entity, index=False, encoding="utf-8")
 
 
 def find_new_entity():
@@ -89,8 +89,9 @@ def find_new_entity():
     set_old_pattern = set_old_list[1]
     set_old_treat = set_old_list[2]
     set_old_symptom = set_old_list[3]
+    print("set_old_pattern:", set_old_pattern)
     set_ner_list = [set(), set(), set(), set()]  # 用于保存算法识别出的不同实体词的集合列表
-    entity_ner_all = pd.read_csv(path_result)
+    entity_ner_all = pd.read_csv(path_ner_entity)
     for index, set_name in enumerate(sets_name_list):
         for i in range(entity_ner_all.shape[0]):
             entity_ner_string = entity_ner_all["NER_"+set_name].loc[i]
@@ -100,23 +101,23 @@ def find_new_entity():
                 # print(entity_ner_list)
                 for entity in entity_ner_list:
                     set_ner_list[index].add(entity)
-    # print("set_ner_list:", set_ner_list)
+    print("set_ner_list:", set_ner_list)
     # 用于保存算法识别出的不同实体的四个集合
     set_ner_diseases = set_ner_list[0]
     set_ner_pattern = set_ner_list[1]
     set_ner_treat = set_ner_list[2]
     set_ner_symptom = set_ner_list[3]
-    # 得到两个集合的差集,即被发现的新词（比如set_ner_diseases中set_old_diseases中未出现的新实体）
+    print("set_ner_pattern:", set_ner_pattern)
+    # 得到两个集合的差集,即被发现的新词（比如set_ner_diseases中出现但是set_old_diseases中未出现的新实体）
     set_new_diseases = set_ner_diseases - set_old_diseases
     set_new_pattern = set_ner_pattern - set_old_pattern
     set_new_treat = set_ner_treat - set_old_treat
     set_new_symptom = set_ner_symptom - set_old_symptom
-    print(set_new_symptom)
-    set_new_diseases_series = pd.Series(list(set_new_diseases), name="new_diseases")
-    set_new_pattern_series = pd.Series(list(set_new_pattern), name="new_pattern")
-    set_new_treat_series = pd.Series(list(set_new_treat), name="new_treat")
-    set_new_symptom_series = pd.Series(list(set_new_symptom), name="new_symptom")
-    print(set_new_symptom_series)
+    print("set_new_pattern:", set_new_pattern)
+    # set_new_diseases_series = pd.Series(list(set_new_diseases), name="new_diseases")
+    # set_new_pattern_series = pd.Series(list(set_new_pattern), name="new_pattern")
+    # set_new_treat_series = pd.Series(list(set_new_treat), name="new_treat")
+    # set_new_symptom_series = pd.Series(list(set_new_symptom), name="new_symptom")
     set_true_list = [set(), set(), set(), set()]  # 用于保存测试集中不同实体的集合列表
     for index, set_name in enumerate(sets_name_list):
         path_set = os.path.join("data", set_name+"_4000.txt")
@@ -130,11 +131,16 @@ def find_new_entity():
     set_true_pattern = set_true_list[1]
     set_true_treat = set_true_list[2]
     set_true_symptom = set_true_list[3]
-    set_true_diseases_series = pd.Series(list(set_true_diseases), name="true_diseases")
-    set_true_pattern_series = pd.Series(list(set_true_pattern), name="true_treat")
-    set_true_treat_series = pd.Series(list(set_true_treat), name="true_treat")
-    set_true_symptom_series = pd.Series(list(set_true_symptom), name="true_symptom")
-    # 得到被发现的新实体集合与测试集的实体集合之间的交集，则为被发现的新实体中正确的实体
+    # set_true_diseases_series = pd.Series(list(set_true_diseases), name="true_diseases")
+    # set_true_pattern_series = pd.Series(list(set_true_pattern), name="true_treat")
+    # set_true_treat_series = pd.Series(list(set_true_treat), name="true_treat")
+    # set_true_symptom_series = pd.Series(list(set_true_symptom), name="true_symptom")
+    # 获取测试集的实体集合中的存在的所有新实体，即在测试集中存在但是未在训练集中出现的实体(用于计算召回率)
+    set_true_new_diseases = set_true_diseases - set_old_diseases
+    set_true_new_pattern = set_true_pattern - set_old_pattern
+    set_true_new_treat = set_true_treat - set_old_treat
+    set_true_new_symptom = set_true_symptom - set_old_symptom
+    # 得到被发现的新实体集合与测试集的实体集合之间的交集，则为被发现的新实体中正确的实体（用于计算精确率和召回率）
     set_new_true_diseases = set_new_diseases & set_true_diseases
     set_new_true_pattern = set_new_pattern & set_true_pattern
     set_new_true_treat = set_new_treat & set_true_treat
@@ -145,10 +151,8 @@ def find_new_entity():
     set_new_true_treat_series = pd.Series(list(set_new_true_treat), name="new_true_treat")
     set_new_true_symptom_series = pd.Series(list(set_new_true_symptom), name="new_true_symptom")
     # 通过拼接Series创建最终DataFrame的方法
-    new_true_entity_list = [set_new_diseases_series, set_true_diseases_series, set_new_true_diseases_series,
-                            set_new_pattern_series, set_true_pattern_series, set_new_true_pattern_series,
-                            set_new_treat_series, set_true_treat_series, set_new_true_treat_series,
-                            set_new_symptom_series, set_true_symptom_series, set_new_true_symptom_series]
+    new_true_entity_list = [set_new_true_diseases_series, set_new_true_pattern_series,
+                            set_new_true_treat_series, set_new_true_symptom_series]
     new_true_entity = pd.concat(new_true_entity_list, axis=1)
     new_true_entity.to_csv(path_new_true_entity, encoding="utf-8")
     # 直接写成一个DataFrame的方法(遗留了列数不匹配的问题)
@@ -162,6 +166,22 @@ def find_new_entity():
     #                              "new_symptom", "true_symptom", "new_true_symptom"]
     # new_true_entity = pd.DataFrame(new_true_entity_list, columns=new_true_entity_name_list)
     # new_true_entity.to_csv(path_new_true_entity, encoding="utf-8")
+    # 计算识别各种类型的新实体的精确率(正确的新实体数量/识别出的新实体数量)
+    precision_diseases = float(len(set_new_true_diseases) / len(set_new_diseases))
+    precision_pattern = float(len(set_new_true_pattern) / len(set_new_pattern))
+    precision_treat = float(len(set_new_true_treat) / len(set_new_treat))
+    precision_symptom = float(len(set_new_true_symptom) / len(set_new_symptom))
+    # 计算识别各种类型的新实体的召回率(正确的新实体数量/存在的新实体数量)
+    recall_diseases = float(len(set_new_true_diseases) / len(set_true_new_diseases))
+    recall_pattern = float(len(set_new_true_pattern) / len(set_true_new_pattern))
+    recall_treat = float(len(set_new_true_treat) / len(set_true_new_treat))
+    recall_symptom = float(len(set_new_true_symptom) / len(set_true_new_symptom))
+    print("发现新实体的精确率：病名diseases：{}；证型pattern：{}；治疗手段treat：{}；症状symptom：{}".format(
+        precision_diseases, precision_pattern, precision_treat, precision_symptom
+    ))
+    print("发现新实体的召回率：病名diseases：{}；证型pattern：{}；治疗手段treat：{}；症状symptom：{}".format(
+        recall_diseases, recall_pattern, recall_treat, recall_symptom
+    ))
 
 
 def write_to_data():
@@ -170,7 +190,7 @@ def write_to_data():
     :return:
     """
     data_all = pd.read_csv(path_data_all)
-    result = pd.read_csv(path_result)
+    result = pd.read_csv(path_ner_entity)
     # print(result)
     print(result.info())
     data_all.insert(11, "NER_diseases", None)
@@ -186,6 +206,6 @@ def write_to_data():
 
 
 if __name__ == "__main__":
-    get_data()
+    # get_data()
     find_new_entity()
     # write_to_data()
