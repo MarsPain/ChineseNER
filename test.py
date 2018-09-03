@@ -130,7 +130,10 @@ flattened_transition_indices = start_tag_indices * num_tags + end_tag_indices   
 print("flattened_transition_indices:", flattened_transition_indices.eval(session=sess))
 flattened_transition_params = array_ops.reshape(transition_params, [-1])
 print("flattened_transition_params:", flattened_transition_params.eval(session=sess))
-# 根据状态转移概率矩阵和真实标签进行打分，依然是用flattened_transition_indices中的值去flattened_transition_params中
-# 找对应索引的值，同样非常巧妙，因为flattened_transition_indices中的值就是相应状态转移概率(分数)
+# 根据状态转移概率矩阵和真实标签之间的转移关系进行打分，依然是用flattened_transition_indices中的值去flattened_transition_params中
+# 找对应索引的值，同样非常巧妙，因为flattened_transition_indices中的值代表一种转移关系，
+# flattened_transition_params在该索引处的值就是就是相应状态转移概率(分数)，
+# 若真实标签中经常出现的状态转移关系在状态转移概率矩阵中概率越高、很少出现甚至从未出现的转移关系在状态转移概率矩阵中概率越低，
+# 则预测得分就会高，所以经过训练后，
 binary_scores = array_ops.gather(flattened_transition_params, flattened_transition_indices)
 print("binary_scores:", binary_scores.eval(session=sess))

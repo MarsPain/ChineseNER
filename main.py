@@ -22,14 +22,14 @@ flags.DEFINE_boolean("train",       True,      "Wither train the model")
 # flags.DEFINE_boolean("predict_line", False, "predict one line data or all dataset")
 # 模型参数
 # seg_dim为分割特征的维度，分割特征即为词向量，对应的char_dim为词向量的维度，分别对应于英语文本中的词向量和字符向量
-flags.DEFINE_integer("seg_dim",     0,         "Embedding size for segmentation, 0 if not used")
+flags.DEFINE_integer("seg_dim",     20,         "Embedding size for segmentation, 0 if not used")
 flags.DEFINE_integer("char_dim",    100,        "Embedding size for characters")
 flags.DEFINE_integer("lstm_dim",    100,        "Num of hidden units in LSTM")
 flags.DEFINE_string("tag_schema",   "iobes",    "tagging schema iobes or iob")  # 标注格式
 # 模型训练参数
 flags.DEFINE_float("clip",          5,          "Gradient clip")
 flags.DEFINE_float("dropout",       0.2,        "Dropout rate")
-flags.DEFINE_float("batch_size",    128,         "batch size")
+flags.DEFINE_float("batch_size",    256,         "batch size")
 flags.DEFINE_float("lr",            0.001,      "Initial learning rate")
 flags.DEFINE_string("optimizer",    "adam",     "Optimizer for training")
 flags.DEFINE_boolean("pre_emb",     True,       "Wither use pre-trained embedding")
@@ -46,8 +46,8 @@ flags.DEFINE_string("vocab_file",   "vocab.json",   "File for vocab")
 flags.DEFINE_string("config_file",  "config_file",  "File for config")
 flags.DEFINE_string("script",       "conlleval",    "evaluation script")
 flags.DEFINE_string("result_path",  "result",       "Path for results")
-flags.DEFINE_string("emb_file",     "wiki_100.utf8", "Path for pre_trained embedding")
-# flags.DEFINE_string("emb_file",     "word2vec_model.txt", "Path for pre_trained embedding")
+# flags.DEFINE_string("emb_file",     "wiki_100.utf8", "Path for pre_trained embedding")
+flags.DEFINE_string("emb_file",     "word2vec_model.txt", "Path for pre_trained embedding")
 # 原示例数据集
 # flags.DEFINE_string("train_file",   os.path.join("data", "example.train"),  "Path for train data")
 # flags.DEFINE_string("dev_file",     os.path.join("data", "example.dev"),    "Path for dev data")
