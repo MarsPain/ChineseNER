@@ -14,28 +14,28 @@ from data_utils import input_from_line, BatchManager
 
 flags = tf.flags
 # 若要训练则将clean和train设置为True
-# flags.DEFINE_boolean("clean",       True,      "clean train folder")
-# flags.DEFINE_boolean("train",       True,      "Wither train the model")
+flags.DEFINE_boolean("clean",       True,      "clean train folder")
+flags.DEFINE_boolean("train",       True,      "Wither train the model")
 # 若要进行预测则将clean和train均设置为False
-flags.DEFINE_boolean("clean",       False,      "clean train folder")
-flags.DEFINE_boolean("train",       False,      "Wither train the model")
-flags.DEFINE_boolean("predict_line", False, "predict one line data or all dataset")
+# flags.DEFINE_boolean("clean",       False,      "clean train folder")
+# flags.DEFINE_boolean("train",       False,      "Wither train the model")
+# flags.DEFINE_boolean("predict_line", False, "predict one line data or all dataset")
 # 模型参数
 # seg_dim为分割特征的维度，分割特征即为词向量，对应的char_dim为词向量的维度，分别对应于英语文本中的词向量和字符向量
-flags.DEFINE_integer("seg_dim",     20,         "Embedding size for segmentation, 0 if not used")
+flags.DEFINE_integer("seg_dim",     0,         "Embedding size for segmentation, 0 if not used")
 flags.DEFINE_integer("char_dim",    100,        "Embedding size for characters")
 flags.DEFINE_integer("lstm_dim",    100,        "Num of hidden units in LSTM")
 flags.DEFINE_string("tag_schema",   "iobes",    "tagging schema iobes or iob")  # 标注格式
 # 模型训练参数
 flags.DEFINE_float("clip",          5,          "Gradient clip")
-flags.DEFINE_float("dropout",       0.5,        "Dropout rate")
-flags.DEFINE_float("batch_size",    20,         "batch size")
+flags.DEFINE_float("dropout",       0.2,        "Dropout rate")
+flags.DEFINE_float("batch_size",    128,         "batch size")
 flags.DEFINE_float("lr",            0.001,      "Initial learning rate")
 flags.DEFINE_string("optimizer",    "adam",     "Optimizer for training")
 flags.DEFINE_boolean("pre_emb",     True,       "Wither use pre-trained embedding")
 flags.DEFINE_boolean("zeros",       False,      "Wither replace digits with zero")
 flags.DEFINE_boolean("lower",       True,       "Wither lower case")
-flags.DEFINE_integer("max_epoch",   50,        "maximum training epochs")
+flags.DEFINE_integer("max_epoch",   100,        "maximum training epochs")
 flags.DEFINE_integer("steps_check", 100,        "steps per checkpoint")
 # 文件路径参数设置
 flags.DEFINE_string("ckpt_path",    "ckpt",      "Path to save model")
@@ -47,22 +47,23 @@ flags.DEFINE_string("config_file",  "config_file",  "File for config")
 flags.DEFINE_string("script",       "conlleval",    "evaluation script")
 flags.DEFINE_string("result_path",  "result",       "Path for results")
 flags.DEFINE_string("emb_file",     "wiki_100.utf8", "Path for pre_trained embedding")
+# flags.DEFINE_string("emb_file",     "word2vec_model.txt", "Path for pre_trained embedding")
 # 原示例数据集
 # flags.DEFINE_string("train_file",   os.path.join("data", "example.train"),  "Path for train data")
 # flags.DEFINE_string("dev_file",     os.path.join("data", "example.dev"),    "Path for dev data")
 # flags.DEFINE_string("test_file",    os.path.join("data", "example.test"),   "Path for test data")
 # 中医数据集小样
-flags.DEFINE_string("train_file",   os.path.join("data", "example_medicine.train"),  "Path for train data")
-flags.DEFINE_string("dev_file",     os.path.join("data", "example_medicine.dev"),    "Path for dev data")
-flags.DEFINE_string("test_file",    os.path.join("data", "example_medicine.test"),   "Path for test data")
+# flags.DEFINE_string("train_file",   os.path.join("data", "example_medicine.train"),  "Path for train data")
+# flags.DEFINE_string("dev_file",     os.path.join("data", "example_medicine.dev"),    "Path for dev data")
+# flags.DEFINE_string("test_file",    os.path.join("data", "example_medicine.test"),   "Path for test data")
 # 上市公司公告信息
 # flags.DEFINE_string("train_file",   os.path.join("data", "announce.train"),  "Path for train data")
 # flags.DEFINE_string("dev_file",     os.path.join("data", "announce.dev"),    "Path for dev data")
 # flags.DEFINE_string("test_file",    os.path.join("data", "announce.test"),   "Path for test data")
 # 全体中医数据集
-# flags.DEFINE_string("train_file",   os.path.join("data", "7000.train"),  "Path for train data")
-# flags.DEFINE_string("dev_file",     os.path.join("data", "dev.dev"),    "Path for dev data")
-# flags.DEFINE_string("test_file",    os.path.join("data", "test.test"),   "Path for test data")
+flags.DEFINE_string("train_file",   os.path.join("data", "7000.train"),  "Path for train data")
+flags.DEFINE_string("dev_file",     os.path.join("data", "dev.dev"),    "Path for dev data")
+flags.DEFINE_string("test_file",    os.path.join("data", "test.test"),   "Path for test data")
 
 FLAGS = tf.flags.FLAGS
 assert FLAGS.clip < 5.1, "gradient clip should't be too much"

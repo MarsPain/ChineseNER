@@ -33,12 +33,9 @@ class Model(object):
         self.targets = tf.placeholder(dtype=tf.int32, shape=[None, None], name="Targets")   # 真实标签
         self.dropout = tf.placeholder(dtype=tf.float32, name="Dropout")
         # 设置变量
-        self.char_lookup = tf.get_variable(name="char_embedding", shape=[self.num_chars, self.char_dim],
-                                           initializer=self.initializer)    # 词向量矩阵，初始化模型的时候，通过预训练词向量进行初始化
-        self.seg_lookup = tf.get_variable(name="seg_embedding", shape=[self.num_segs, self.seg_dim],
-                                          initializer=self.initializer)  # 分割特征向量矩阵
-        self.trans = tf.get_variable("transitions", shape=[self.num_tags + 1, self.num_tags + 1],
-                                     initializer=self.initializer)  # 状态转移矩阵，在loss层中进行计算
+        self.char_lookup = None    # 词向量矩阵，初始化模型的时候，通过预训练词向量进行初始化
+        self.seg_lookup = None  # 分割特征向量矩阵
+        self.trans = None  # 状态转移矩阵，在loss层中进行计算
 
         used = tf.sign(tf.abs(self.char_inputs))    # 计算序列中索引非0字符的数量
         length = tf.reduce_sum(used, reduction_indices=1)
@@ -78,14 +75,14 @@ class Model(object):
         embedding = []
         with tf.variable_scope("char_embedding"):
             # print("num_chars", self.num_chars)
-            # self.char_lookup = tf.get_variable(name="char_embedding", shape=[self.num_chars, self.char_dim],
-            #                                    initializer=self.initializer)
+            self.char_lookup = tf.get_variable(name="char_embedding", shape=[self.num_chars, self.char_dim],
+                                               initializer=self.initializer)
             embedding.append(tf.nn.embedding_lookup(self.char_lookup, self.char_inputs))
             if self.config["seg_dim"]:
                 with tf.variable_scope("seg_embedding"):
                     # print("num_segs", self.seg_dim)
-                    # self.seg_lookup = tf.get_variable(name="seg_embedding", shape=[self.num_segs, self.seg_dim],
-                    #                                   initializer=self.initializer)
+                    self.seg_lookup = tf.get_variable(name="seg_embedding", shape=[self.num_segs, self.seg_dim],
+                                                      initializer=self.initializer)
                     embedding.append(tf.nn.embedding_lookup(self.seg_lookup, self.seg_inputs))
             embed = tf.concat(embedding, axis=-1)
             # print(embed.shape)
@@ -157,6 +154,8 @@ class Model(object):
             targets = tf.concat(
                 [tf.cast(self.num_tags*tf.ones([self.batch_size, 1]), tf.int32), self.targets], axis=-1)
             print("targets:", targets)
+            self.trans = tf.get_variable("transitions", shape=[self.num_tags + 1, self.num_tags + 1],
+                                         initializer=self.initializer)
             log_likelihood, self.trans = crf_log_likelihood(inputs=logits, tag_indices=targets,
                                                             transition_params=self.trans,
                                                             sequence_lengths=self.lengths+1)
@@ -226,7 +225,7 @@ class Model(object):
         :return:results:预测结果列表
         """
         results = []
-        trans = self.trans.eval()  # tensor.eval()作用类似于sess.run()，目的在于运行图获取tensor
+        trans = self.trans.eval()  # tensor.eval()作用类似于sess.run()，目的在于运行图获取tensor,返回一个array
         for batch in data_manager.iter_batch():
             # batch = [sentences, chars(word的id), segs(分割特征), tags]
             strings = batch[0]  # 原语句的字符列表
