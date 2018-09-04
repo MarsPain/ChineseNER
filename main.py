@@ -22,7 +22,7 @@ flags.DEFINE_boolean("train",       True,      "Wither train the model")
 # flags.DEFINE_boolean("predict_line", False, "predict one line data or all dataset")
 # 模型参数
 # seg_dim为分割特征的维度，分割特征即为词向量，对应的char_dim为词向量的维度，分别对应于英语文本中的词向量和字符向量
-flags.DEFINE_integer("seg_dim",     20,         "Embedding size for segmentation, 0 if not used")
+flags.DEFINE_integer("seg_dim",     0,         "Embedding size for segmentation, 0 if not used")
 flags.DEFINE_integer("char_dim",    100,        "Embedding size for characters")
 flags.DEFINE_integer("lstm_dim",    100,        "Num of hidden units in LSTM")
 flags.DEFINE_string("tag_schema",   "iobes",    "tagging schema iobes or iob")  # 标注格式
