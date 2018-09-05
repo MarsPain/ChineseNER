@@ -155,17 +155,6 @@ def find_new_entity():
                             set_new_true_treat_series, set_new_true_symptom_series]
     new_true_entity = pd.concat(new_true_entity_list, axis=1)
     new_true_entity.to_csv(path_new_true_entity, encoding="utf-8")
-    # 直接写成一个DataFrame的方法(遗留了列数不匹配的问题)
-    # new_true_entity_list = [list(set_new_diseases), list(set_true_diseases), list(set_new_true_diseases),
-    #                         list(set_new_pattern), list(set_true_pattern), list(set_new_true_pattern),
-    #                         list(set_new_treat), list(set_true_treat), list(set_new_true_treat),
-    #                         list(set_new_symptom), list(set_true_symptom), list(set_new_true_symptom)]
-    # new_true_entity_name_list = ["new_diseases", "true_diseases", "new_true_diseases",
-    #                              "new_pattern", "true_pattern", "new_true_pattern",
-    #                              "new_treat", "true_treat", "new_true_treat",
-    #                              "new_symptom", "true_symptom", "new_true_symptom"]
-    # new_true_entity = pd.DataFrame(new_true_entity_list, columns=new_true_entity_name_list)
-    # new_true_entity.to_csv(path_new_true_entity, encoding="utf-8")
     # 计算识别各种类型的新实体的精确率(正确的新实体数量/识别出的新实体数量)
     precision_diseases = float(len(set_new_true_diseases) / len(set_new_diseases))
     precision_pattern = float(len(set_new_true_pattern) / len(set_new_pattern))
