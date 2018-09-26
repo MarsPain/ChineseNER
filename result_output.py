@@ -79,7 +79,7 @@ def find_new_entity():
     sets_name_list = ["diseases", "pattern", "treat", "symptom"]    # 四个原实体词库的文件名（病名、证型、治疗手段、症状）
     set_old_list = [set(), set(), set(), set()]  # 用于保存训练集的实体词库中的不同实体的集合列表
     for index, set_name in enumerate(sets_name_list):
-        path_set = os.path.join("data", set_name+"_7000.txt")
+        path_set = os.path.join("data", set_name+"_train.txt")
         with open(path_set, "r", encoding="utf-8") as f_set:
             lines = f_set.readlines()
             for line in lines:
@@ -126,7 +126,7 @@ def find_new_entity():
     set_true_list = [set(), set(), set(), set()]  # 用于保存测试集中不同实体的集合列表
     set_true = set()
     for index, set_name in enumerate(sets_name_list):
-        path_set = os.path.join("data", set_name+"_4000.txt")
+        path_set = os.path.join("data", set_name+"_test.txt")
         with open(path_set, "r", encoding="utf-8") as f_set:
             lines = f_set.readlines()
             for line in lines:
