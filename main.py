@@ -41,14 +41,15 @@ flags.DEFINE_integer("steps_check", 100,        "steps per checkpoint")
 flags.DEFINE_string("ckpt_path",    "ckpt",      "Path to save model")
 flags.DEFINE_string("summary_path", "summary",      "Path to store summaries")
 flags.DEFINE_string("log_file",     "train.log",    "File for log")
+flags.DEFINE_string("train_dev_file",     "train_dev.pkl",     "file for train data and dev data")
 flags.DEFINE_string("map_file",     "maps.pkl",     "file for maps")
 flags.DEFINE_string("vocab_file",   "vocab.json",   "File for vocab")
 flags.DEFINE_string("config_file",  "config_file",  "File for config")
 flags.DEFINE_string("script",       "conlleval",    "evaluation script")
 flags.DEFINE_string("result_path",  "result",       "Path for results")
-# flags.DEFINE_string("emb_file",     "wiki_100.utf8", "Path for pre_trained embedding")
+flags.DEFINE_string("emb_file",     "wiki_100.utf8", "Path for pre_trained embedding")
 # flags.DEFINE_string("emb_file",     "word2vec_model.txt", "Path for pre_trained embedding")
-flags.DEFINE_string("emb_file",     "word2vec_model_sg.txt", "Path for pre_trained embedding")
+# flags.DEFINE_string("emb_file",     "word2vec_model_sg.txt", "Path for pre_trained embedding")
 # 原示例数据集
 # flags.DEFINE_string("train_file",   os.path.join("data", "example.train"),  "Path for train data")
 # flags.DEFINE_string("dev_file",     os.path.join("data", "example.dev"),    "Path for dev data")
@@ -172,8 +173,14 @@ class Main:
         真实标签列表，然后获取batch管理类，用于生成batch数据
         :return:
         """
-        train_data = prepare_dataset(self.train_sentences, self.char_to_id, self.tag_to_id, FLAGS.lower)
-        dev_data = prepare_dataset(self.dev_sentences, self.char_to_id, self.tag_to_id, FLAGS.lower)
+        if not os.path.isfile(FLAGS.train_dev_file):
+            train_data = prepare_dataset(self.train_sentences, self.char_to_id, self.tag_to_id, FLAGS.lower)
+            dev_data = prepare_dataset(self.dev_sentences, self.char_to_id, self.tag_to_id, FLAGS.lower)
+            with open(FLAGS.train_dev_file, "wb") as f:
+                pickle.dump([train_data, dev_data], f)
+        else:
+            with open(FLAGS.train_dev_file, "rb") as f:
+                train_data, dev_data = pickle.load(f)
         print("%i / %i  sentences in train / dev ." % (len(train_data), len(dev_data)))
         self.train_batch_manager = BatchManager(train_data, int(FLAGS.batch_size))
         self.dev_batch_manager = BatchManager(dev_data, int(FLAGS.batch_size))

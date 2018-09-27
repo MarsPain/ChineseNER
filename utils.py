@@ -73,6 +73,8 @@ def make_path(params):
 
 
 def clean(params):
+    if os.path.isfile(params.train_dev_file):
+        os.remove(params.train_dev_file)
     if os.path.isfile(params.vocab_file):
         os.remove(params.vocab_file)
     if os.path.isfile(params.map_file):
