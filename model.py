@@ -171,7 +171,7 @@ class Model(object):
         _, chars, segs, tags = batch
         feed_dict = {
             self.char_inputs: np.asarray(chars),
-            # self.seg_inputs: np.asarray(segs),
+            self.seg_inputs: np.asarray(segs),
             self.dropout: 1.0,
         }
         if is_train:
