@@ -15,11 +15,11 @@ from data_utils import input_from_line, BatchManager
 flags = tf.flags
 # 若要训练则将clean和train设置为True
 flags.DEFINE_boolean("clean",       False,      "clean train folder")
-flags.DEFINE_boolean("train",       False,      "Wither train the model")
+flags.DEFINE_boolean("train",       True,      "Wither train the model")
 # 若要进行预测则将clean和train均设置为False
 # flags.DEFINE_boolean("clean",       False,      "clean train folder")
 # flags.DEFINE_boolean("train",       False,      "Wither train the model")
-flags.DEFINE_boolean("predict_line", False, "predict one line data or all dataset")
+# flags.DEFINE_boolean("predict_line", False, "predict one line data or all dataset")
 # 模型参数
 # seg_dim为分割特征的维度，分割特征即为词向量，对应的char_dim为词向量的维度，分别对应于英语文本中的词向量和字符向量
 flags.DEFINE_integer("seg_dim",     20,         "Embedding size for segmentation, 0 if not used")
@@ -38,15 +38,15 @@ flags.DEFINE_boolean("lower",       True,       "Wither lower case")
 flags.DEFINE_integer("max_epoch",   100,        "maximum training epochs")
 flags.DEFINE_integer("steps_check", 100,        "steps per checkpoint")
 # 文件路径参数设置
-flags.DEFINE_string("ckpt_path",    "3000_ckpt",      "Path to save model")
+flags.DEFINE_string("ckpt_path",    "7000_ckpt",      "Path to save model")
 flags.DEFINE_string("summary_path", "summary",      "Path to store summaries")
-flags.DEFINE_string("log_file",     "3000_train.log",    "File for log")
-flags.DEFINE_string("train_dev_file",     "3000_train_dev.pkl",     "file for train data and dev data")
-flags.DEFINE_string("map_file",     "3000_maps.pkl",     "file for maps")
+flags.DEFINE_string("log_file",     "7000_train.log",    "File for log")
+flags.DEFINE_string("train_dev_file",     "7000_train_dev.pkl",     "file for train data and dev data")
+flags.DEFINE_string("map_file",     "7000_maps.pkl",     "file for maps")
 flags.DEFINE_string("vocab_file",   "vocab.json",   "File for vocab")
-flags.DEFINE_string("config_file",  "3000_config_file",  "File for config")
+flags.DEFINE_string("config_file",  "7000_config_file",  "File for config")
 flags.DEFINE_string("script",       "conlleval",    "evaluation script")
-flags.DEFINE_string("result_path",  "3000_result",       "Path for results")
+flags.DEFINE_string("result_path",  "7000_result",       "Path for results")
 # flags.DEFINE_string("emb_file",     "wiki_100.utf8", "Path for pre_trained embedding")
 flags.DEFINE_string("emb_file",     "word2vec_model.txt", "Path for pre_trained embedding")
 # flags.DEFINE_string("emb_file",     "word2vec_model_sg.txt", "Path for pre_trained embedding")
@@ -63,7 +63,7 @@ flags.DEFINE_string("emb_file",     "word2vec_model.txt", "Path for pre_trained 
 # flags.DEFINE_string("dev_file",     os.path.join("data", "announce.dev"),    "Path for dev data")
 # flags.DEFINE_string("test_file",    os.path.join("data", "announce.test"),   "Path for test data")
 # 全体中医数据集
-flags.DEFINE_string("train_file",   os.path.join("data", "3000.train"),  "Path for train data")
+flags.DEFINE_string("train_file",   os.path.join("data", "7000.train"),  "Path for train data")
 flags.DEFINE_string("dev_file",     os.path.join("data", "1150.dev"),    "Path for dev data")
 flags.DEFINE_string("test_file",    os.path.join("data", "test.test"),   "Path for test data")
 
