@@ -118,7 +118,8 @@ def find_new_entity():
     set_new_symptom = set_ner_symptom - set_old_symptom
     set_new_all = set_ner_all - set_old_all
     print("set_new_pattern:", set_new_pattern)
-    print("被发现的新实体数量：", len(set_new_diseases), len(set_new_pattern), len(set_new_treat), len(set_new_symptom))
+    num_set_new_all = len(set_new_diseases) + len(set_new_pattern) + len(set_new_treat) + len(set_new_symptom)
+    print("被发现的新实体数量：", len(set_new_diseases), len(set_new_pattern), len(set_new_treat), len(set_new_symptom), num_set_new_all)
     # set_new_diseases_series = pd.Series(list(set_new_diseases), name="new_diseases")
     # set_new_pattern_series = pd.Series(list(set_new_pattern), name="new_pattern")
     # set_new_treat_series = pd.Series(list(set_new_treat), name="new_treat")
@@ -147,9 +148,9 @@ def find_new_entity():
     set_true_new_pattern = set_true_pattern - set_old_pattern
     set_true_new_treat = set_true_treat - set_old_treat
     set_true_new_symptom = set_true_symptom - set_old_symptom
-    set_true_new_all = set_true- set_old_all
-    print("存在的新实体数量：", len(set_true_new_diseases), len(set_true_new_pattern),
-          len(set_true_new_treat), len(set_true_new_symptom))
+    set_true_new_all = set_true - set_old_all
+    num_set_true_new_all = len(set_true_new_diseases) + len(set_true_new_pattern) + len(set_true_new_treat) + len(set_true_new_symptom)
+    print("存在的新实体数量：", len(set_true_new_diseases), len(set_true_new_pattern), len(set_true_new_treat), len(set_true_new_symptom), num_set_true_new_all)
     # 得到被发现的新实体集合与测试集的实体集合之间的交集，则为被发现的新实体中正确的实体（用于计算精确率和召回率）
     set_new_true_diseases = set_new_diseases & set_true_diseases
     set_new_true_pattern = set_new_pattern & set_true_pattern
@@ -157,8 +158,8 @@ def find_new_entity():
     set_new_true_symptom = set_new_symptom & set_true_symptom
     set_new_true_all = set_new_all & set_true
     print("set_new_true_pattern:", set_new_true_pattern)
-    print("正确的新实体数量:", len(set_new_true_diseases), len(set_new_true_pattern),
-          len(set_new_true_treat), len(set_new_true_symptom))
+    num_set_new_true_all = len(set_new_true_diseases) + len(set_new_true_pattern) + len(set_new_true_treat) + len(set_new_true_symptom)
+    print("正确的新实体数量:", len(set_new_true_diseases), len(set_new_true_pattern), len(set_new_true_treat), len(set_new_true_symptom), num_set_new_true_all)
     set_new_true_diseases_series = pd.Series(list(set_new_true_diseases), name="new_true_diseases")
     set_new_true_pattern_series = pd.Series(list(set_new_true_pattern), name="new_true_pattern")
     set_new_true_treat_series = pd.Series(list(set_new_true_treat), name="new_true_treat")
@@ -185,10 +186,10 @@ def find_new_entity():
         recall_diseases, recall_pattern, recall_treat, recall_symptom
     ))
     print("发现新实体的全体精确率：{}".format(
-        float(len(set_new_true_all) / (len(set_new_all)))
+        float(num_set_new_true_all / num_set_new_all)
     ))
     print("发现新实体的全体召回率：{}".format(
-        float(len(set_new_true_all) / (len(set_true_new_all)))
+        float(num_set_new_true_all / num_set_true_new_all)
     ))
 
 
