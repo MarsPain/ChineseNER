@@ -37,7 +37,10 @@ def result_write_evaluate(results, path, name):
     :return:
     """
     if name == "dev":
-        output_file = os.path.join(path, "ner_predict_dev.utf8")
+        # output_file = os.path.join(path, "3000_predict_dev.utf8")
+        # output_file = os.path.join(path, "5000_predict_dev.utf8")
+        # output_file = os.path.join(path, "7000_predict_dev.utf8")
+        output_file = os.path.join(path, "10000_predict_dev.utf8")
         with open(output_file, "w", encoding="utf8") as f:
             to_write = []
             for block in results:
