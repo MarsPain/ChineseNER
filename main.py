@@ -32,19 +32,20 @@ flags.DEFINE_float("dropout",       0.2,        "Dropout rate")
 flags.DEFINE_float("batch_size",    256,         "batch size")
 flags.DEFINE_float("lr",            0.001,      "Initial learning rate")
 flags.DEFINE_string("optimizer",    "adam",     "Optimizer for training")
-flags.DEFINE_boolean("pre_emb",     True,       "Wither use pre-trained embedding")
+flags.DEFINE_boolean("pre_emb",     False,       "Wither use pre-trained embedding")
 flags.DEFINE_boolean("zeros",       False,      "Wither replace digits with zero")
 flags.DEFINE_boolean("lower",       True,       "Wither lower case")
 flags.DEFINE_integer("max_epoch",   100,        "maximum training epochs")
 flags.DEFINE_integer("steps_check", 100,        "steps per checkpoint")
 # 文件路径参数设置
-flags.DEFINE_string("ckpt_path",    "10000_ckpt",      "Path to save model")
+size_train_data = 10000
+flags.DEFINE_string("ckpt_path",    str(size_train_data)+"_ckpt",      "Path to save model")
 flags.DEFINE_string("summary_path", "summary",      "Path to store summaries")
-flags.DEFINE_string("log_file",     "10000_train.log",    "File for log")
-flags.DEFINE_string("train_dev_file",     "10000_train_dev.pkl",     "file for train data and dev data")
-flags.DEFINE_string("map_file",     "10000_maps.pkl",     "file for maps")
+flags.DEFINE_string("log_file",     str(size_train_data)+"_train.log",    "File for log")
+flags.DEFINE_string("train_dev_file",     str(size_train_data)+"_train_dev.pkl",     "file for train data and dev data")
+flags.DEFINE_string("map_file",     str(size_train_data)+"_maps.pkl",     "file for maps")
 flags.DEFINE_string("vocab_file",   "vocab.json",   "File for vocab")
-flags.DEFINE_string("config_file",  "10000_config_file",  "File for config")
+flags.DEFINE_string("config_file",  str(size_train_data)+"_config_file",  "File for config")
 flags.DEFINE_string("script",       "conlleval",    "evaluation script")
 flags.DEFINE_string("result_path",  "result",       "Path for results")
 # flags.DEFINE_string("emb_file",     "wiki_100.utf8", "Path for pre_trained embedding")
@@ -63,7 +64,7 @@ flags.DEFINE_string("emb_file",     "word2vec_model_sg.txt", "Path for pre_train
 # flags.DEFINE_string("dev_file",     os.path.join("data", "announce.dev"),    "Path for dev data")
 # flags.DEFINE_string("test_file",    os.path.join("data", "announce.test"),   "Path for test data")
 # 全体中医数据集
-flags.DEFINE_string("train_file",   os.path.join("data", "10000.train"),  "Path for train data")
+flags.DEFINE_string("train_file",   os.path.join("data", str(size_train_data)+".train"),  "Path for train data")
 flags.DEFINE_string("dev_file",     os.path.join("data", "dev.dev"),    "Path for dev data")
 flags.DEFINE_string("test_file",    os.path.join("data", "test.test"),   "Path for test data")
 
@@ -117,7 +118,7 @@ class Main:
             logger.info("evaluate dev data......")
             ner_results = model.predict(sess, data, id_to_tag)  # 对验证集进行预测，得到对各个实体的预测
             # 将预测结果写入到原数据并输出，然后计算并评估识别性能
-            eval_lines = result_write_evaluate(ner_results, FLAGS.result_path, name)
+            eval_lines = result_write_evaluate(ner_results, FLAGS.result_path, name, size_train_data)
             for line in eval_lines:
                 logger.info(line)
             f1 = float(eval_lines[1].strip().split()[-1])

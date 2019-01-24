@@ -28,7 +28,7 @@ def get_logger(log_file):
     return logger
 
 
-def result_write_evaluate(results, path, name):
+def result_write_evaluate(results, path, name, size_train_data):
     """
     将对验证集的预测识别结果写入到原数据中并进行输出，然后计算识别的性能；将对测试集的预测识别结果写入到原数据中并进行输出
     :param results:
@@ -40,7 +40,8 @@ def result_write_evaluate(results, path, name):
         # output_file = os.path.join(path, "3000_predict_dev.utf8")
         # output_file = os.path.join(path, "5000_predict_dev.utf8")
         # output_file = os.path.join(path, "7000_predict_dev.utf8")
-        output_file = os.path.join(path, "10000_predict_dev.utf8")
+        # output_file = os.path.join(path, "10000_predict_dev.utf8")
+        output_file = os.path.join(path, str(size_train_data)+"_predict_dev.utf8")
         with open(output_file, "w", encoding="utf8") as f:
             to_write = []
             for block in results:
