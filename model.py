@@ -94,6 +94,9 @@ class Model(object):
         :param lstm_inputs: [batch_size, num_steps, emb_size] 
         :return: [batch_size, num_steps, 2*lstm_dim] 
         """
+        lstm_inputs = tf.layers.dense(lstm_inputs, self.lstm_dim, use_bias=True)
+        lstm_inputs = tf.nn.relu(lstm_inputs)
+
         with tf.variable_scope("char_BiLSTM"):
             lstm_cell = {}
             for direction in ["forward", "backward"]:
@@ -106,8 +109,32 @@ class Model(object):
                 lstm_cell["backward"],  # 后向传播cell
                 lstm_inputs,
                 dtype=tf.float32,
-                sequence_length=self.lengths)
-        return tf.concat(outputs, axis=2)
+                sequence_length=self.lengths,
+                time_major=False)
+        output_forward, output_backward = tf.unstack(outputs, axis=0)
+        output_h = tf.add(output_forward, output_backward)
+        mix_input = tf.add(tf.nn.relu(output_h), lstm_inputs)
+
+        with tf.variable_scope("char_BiLSTM_2"):
+            lstm_cell = {}
+            for direction in ["forward", "backward"]:
+                with tf.variable_scope(direction):
+                    lstm_cell[direction] = rnn.CoupledInputForgetGateLSTMCell(
+                        self.lstm_dim,   # 每个LSTM cell内部的神经元数量（即隐层参数维度）
+                        use_peepholes=True, initializer=self.initializer, state_is_tuple=True)
+            outputs, final_states = tf.nn.bidirectional_dynamic_rnn(
+                lstm_cell["forward"],   # 前向传播cell
+                lstm_cell["backward"],  # 后向传播cell
+                mix_input,
+                dtype=tf.float32,
+                sequence_length=self.lengths,
+                time_major=False)
+        output_forward, output_backward = tf.unstack(outputs, axis=0)
+        output_h = tf.add(output_forward, output_backward)
+
+        mix_input = tf.add(tf.nn.relu(mix_input), tf.nn.relu(output_h))
+
+        return tf.concat([output_h, mix_input], axis=2)
 
     def project_layer(self, lstm_outputs):
         """
